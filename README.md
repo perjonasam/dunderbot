@@ -23,4 +23,12 @@
 * stacked autoencoders
 
 # Resources
+## Collections
+* https://github.com/firmai/financial-machine-learning
+
+## Approaches
+* https://github.com/borisbanushev/stockpredictionai/blob/master/readme2.md: uses GAN and packed with different techs for features (ARIMA; stacked autoencoders using NN, anomaly detection using NN etc.)
 ## Models
+
+## GAN
+* https://github.com/soumith/ganhacks
