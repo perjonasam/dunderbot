@@ -25,12 +25,11 @@
 # Resources
 ## Collections
 * https://github.com/firmai/financial-machine-learning
-## GANs
-* OK intro-artikel: https://pathmind.com/wiki/generative-adversarial-network-gan
+
 
 ## Approaches
 * https://github.com/borisbanushev/stockpredictionai/blob/master/readme2.md: uses GAN and packed with different techs for features (ARIMA; stacked autoencoders using NN, anomaly detection using NN etc.)
 ## Models
-
-## GAN
+### GAN
 * https://github.com/soumith/ganhacks
+* OK intro-artikel: https://pathmind.com/wiki/generative-adversarial-network-gan
