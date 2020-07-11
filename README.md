@@ -1,3 +1,8 @@
+# Running the code
+* Run `make redo` to load docker container
+* Run `make nb` to boot up a jupyter server in the container accessible through local browser
+
+
 # Resources
 ## RL concepts/intros
 * https://spinningup.openai.com/en/latest/spinningup/rl_intro.html: OPenAI intro to RL
