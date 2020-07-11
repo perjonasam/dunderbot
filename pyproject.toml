@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "mlfin"
+version = "0.0.1"
+description = "Using RL to trade"
+authors = ["perjonasam"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pandas = "^0"
+tensortrade = "^0.2.0-rc.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

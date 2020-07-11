@@ -1,0 +1,7 @@
+version: "3.5"
+services:
+  mlfin:
+    build:
+      context: .
+    image: mlfin
+    container_name: mlfin

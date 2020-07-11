@@ -1,0 +1,11 @@
+version: "3.5"
+services:
+  mlfin:
+    build: .
+    image: mlfin
+    tty: true
+    volumes:
+      - .:/src
+    entrypoint: ["/bin/bash"]
+    ports:
+      - 8888:8888
