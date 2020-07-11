@@ -31,4 +31,4 @@ bash:
 nb:
 	@docker exec -it $(PROJECT_NAME) poetry run python -m webbrowser "http://0.0.0.0:8888"
 	echo "Please refresh the browser page and add the token from below"
-	@docker-compose exec segmentclassifier poetry run jupyter notebook --ip=0.0.0.0 --allow-root --no-browser
+	@docker-compose exec $(PROJECT_NAME) poetry run jupyter notebook --ip=0.0.0.0 --allow-root --no-browser
