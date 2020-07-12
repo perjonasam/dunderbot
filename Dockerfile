@@ -16,6 +16,7 @@ COPY pyproject.toml pyproject.toml
 #COPY poetry.lock poetry.lock
 
 RUN poetry lock
+RUN poetry run pip install --upgrade pip
 RUN poetry install 
 
 
