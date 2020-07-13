@@ -7,14 +7,8 @@ authors = ["perjonasam"]
 [tool.poetry.dependencies]
 python = "^3.7"
 pandas = "^0"
-tensorflow = "^1"
-tensortrade = "^0.2.0-rc.0"
 jupyter = "^1.0.0"
 ccxt = "^1.30.85"
-stochastic = "^0.4.0"
-matplotlib = "^3.2.2"
-plotly = "^4.8.2"
-ipython = "^7.16.1"
 stable-baselines = "^2.10.0"
 
 
