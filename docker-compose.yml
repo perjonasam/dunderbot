@@ -1,7 +1,7 @@
 version: "3.5"
 services:
-  mlfin:
+  dunderbot:
     build:
       context: .
-    image: mlfin
-    container_name: mlfin
+    image: dunderbot
+    container_name: dunderbot

@@ -1,4 +1,4 @@
-PROJECT_NAME=mlfin
+PROJECT_NAME=dunderbot
 
 # Make sure everything is not referencing files, by making them .phony:
 #.PHONY: all check format yapf mypy lint run build stop clean redo bash notebook nb it jupyter
