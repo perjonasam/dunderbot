@@ -13,6 +13,7 @@
 * https://github.com/firmai/financial-machine-learning
 
 ## Exchanges and data
+* CCTX README.md contains a curated list of exchanges: https://github.com/ccxt/ccxt
 * Stock value API: https://www.alphavantage.co/#page-top
 * Crypto exchange, allegedly the “best”: https://www.binance.com/en
 * Exchange and Value data source: https://pro.coinbase.com
@@ -23,6 +24,7 @@
 
 # Implementations
 ## RL implementations
+* Full lab like tensortrade: https://mlfinlab.readthedocs.io/en/latest/
 * https://towardsdatascience.com/trade-smarter-w-reinforcement-learning-a5e91163f315: medium intro article on the tensortrade package, using RL
 * Example implementation, simple RL NN PG with interesting details: https://launchpad.ai/blog/trading-bitcoin
 * Example implementation: DQN, features, rewards, epsilon, and more: https://gradienttrader.github.io
@@ -36,10 +38,6 @@
 * Story about a supervised model with some list of problems and solutions: https://www.softkraft.co/applying-machine-learning-to-cryptocurrency-trading/
 
 # Model details
-## GAN
-* https://github.com/soumith/ganhacks
-* OK intro-artikel: https://pathmind.com/wiki/generative-adversarial-network-gan
-
 ## RL
 ### Learning
 * Q-learning and policy gradient, simple and Nice: https://flyyufelix.github.io/2017/10/12/dqn-vs-pg.html
@@ -59,6 +57,9 @@
 ### General tips
 * Very handy RL tips: https://stable-baselines.readthedocs.io/en/master/guide/rl_tips.html
 
+## GAN
+* https://github.com/soumith/ganhacks
+* OK intro-artikel: https://pathmind.com/wiki/generative-adversarial-network-gan
 
 # Idéer
 ## Features
