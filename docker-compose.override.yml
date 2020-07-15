@@ -5,7 +5,7 @@ services:
     image: mlfin
     tty: true
     volumes:
-      - .:/src
+      - .:/code
     entrypoint: ["/bin/bash"]
     ports:
       - 8888:8888
