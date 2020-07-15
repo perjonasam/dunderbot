@@ -13,12 +13,11 @@ RUN pip install poetry
 
 # Add package dependencies
 COPY pyproject.toml pyproject.toml
-#COPY poetry.lock poetry.lock
 
+# Lock versions (but upgrade pip for OpenCV) and install
 RUN poetry lock
 RUN poetry run pip install --upgrade pip
 RUN poetry install 
-
 
 # Copy source code
 COPY . ./

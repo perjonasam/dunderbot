@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "mlfin"
+name = "dunderbot"
 version = "0.0.1"
-description = "Using RL to trade"
+description = "The dunderbot"
 authors = ["perjonasam"]
 
 [tool.poetry.dependencies]

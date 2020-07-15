@@ -1,8 +1,8 @@
 version: "3.5"
 services:
-  mlfin:
+  dunderbot:
     build: .
-    image: mlfin
+    image: dunderbot
     tty: true
     volumes:
       - .:/code
