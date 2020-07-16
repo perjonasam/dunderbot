@@ -1,0 +1,26 @@
+text_processing:
+  minimum_textdata_length:
+    cust_names: 4
+    cust_obj_metadata: 1
+    report_data: 1
+  ngrams:
+    min: 1
+    max: 1
+
+dask_npartitions: 20
+
+models:
+  uncal: 'LinearSVC(random_state=config.random_seed)'
+  cal: 'CalibratedClassifierCV(eval(config.models.uncal), method="sigmoid", cv=5)'
+
+data_cols:
+  beats: ['reportNotes']
+  gcs_callouts: ['freeTextFromGuard']
+  cust_obj_metadata: ['PROD_OBJ_DESCRIPTION', 'LOC_OBJ_DESCRIPTION', 'LOC_MARK_POSITION', 'LOC_MARK_POSITION_GUARD_INFO']
+  cust_obj_names: ['CUST_NAME', 'CUST_NAME_SEARCH', 'CUST_OBJ_NAME']
+  cust_alarm_group: ['ALARM_GROUP_DESCRIPTION']
+  cust_active_services: ['services']
+
+cust_obj_no_col:
+  beats: 'customerObjectNo'
+  
