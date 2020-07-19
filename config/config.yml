@@ -1,3 +1,7 @@
+reward_strategy:
+  cumulative_reward: True
+
+  
 text_processing:
   minimum_textdata_length:
     cust_names: 4

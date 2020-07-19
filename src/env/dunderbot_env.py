@@ -5,6 +5,8 @@ from gym import spaces
 import pandas as pd
 import numpy as np
 
+from .reward_schema import RewardSchema
+
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
@@ -29,6 +31,7 @@ class DunderBotEnv(gym.Env):
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(6, 6), dtype=np.float16)
+
 
     def _next_observation(self):
         # Get the stock data points for the last 5 days and scale to between 0-1
@@ -65,7 +68,7 @@ class DunderBotEnv(gym.Env):
         action_type = action[0]
         amount = action[1]
 
-        if action_type < 1:
+        if action_type == 0:  # Buy
             # Buy amount % of balance in shares
             total_possible = int(self.balance / current_price)
             shares_bought = int(total_possible * amount)
@@ -77,7 +80,7 @@ class DunderBotEnv(gym.Env):
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
             self.shares_held += shares_bought
 
-        elif action_type < 2:
+        elif action_type == 1:  # Sell
             # Sell amount % of shares held
             shares_sold = int(self.shares_held * amount)
             self.balance += shares_sold * current_price
@@ -93,20 +96,29 @@ class DunderBotEnv(gym.Env):
         if self.shares_held == 0:
             self.cost_basis = 0
 
+
+    def _get_reward(self):
+        Reward = RewardSchema(balance=self.balance, 
+                                current_step=self.current_step, 
+                                MAX_STEPS=MAX_STEPS)
+        return Reward.get_reward_strategy()
+
+
     def step(self, action):
         # Execute one time step within the environment
         self._take_action(action)
 
         self.current_step += 1
 
+        #TODO: handle timeline properly
         if self.current_step > len(self.df.loc[:, 'Open'].values) - 6:
             self.current_step = 0
 
-        delay_modifier = (self.current_step / MAX_STEPS)
-
-        reward = self.balance * delay_modifier
+        reward = self._get_reward()
+        
+        # DoD: if we don't have any money, we can't trade
+        # TODO: add time series has run out in DoD (see RLTrader for example)
         done = self.net_worth <= 0
-
         obs = self._next_observation()
 
         return obs, reward, done, {}
@@ -121,6 +133,7 @@ class DunderBotEnv(gym.Env):
         self.total_shares_sold = 0
         self.total_sales_value = 0
 
+        #TODO: handle timeline better
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(
             0, len(self.df.loc[:, 'Open'].values) - 6)
