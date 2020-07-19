@@ -1,6 +1,9 @@
 reward_strategy:
   cumulative_reward: True
 
+action:
+  #amount in units, not ratio
+  fixed_amount: 10
   
 text_processing:
   minimum_textdata_length:

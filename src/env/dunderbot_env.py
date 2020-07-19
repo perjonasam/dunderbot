@@ -4,8 +4,10 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
-
 from .reward_schema import RewardSchema
+
+from src.util.config import get_config
+config = get_config()
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
@@ -24,9 +26,8 @@ class DunderBotEnv(gym.Env):
         self.df = df
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
-        # Actions of the format Buy x%, Sell x%, Hold, etc.
-        self.action_space = spaces.Box(
-            low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16)
+        # For now: only buy or sell fized amounts, or hold
+        self.action_space = spaces.Discrete(3)
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
@@ -65,13 +66,16 @@ class DunderBotEnv(gym.Env):
         current_price = random.uniform(
             self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"])
 
-        action_type = action[0]
-        amount = action[1]
+        action = action
+        amount = config.action.fixed_amount
 
-        if action_type == 0:  # Buy
-            # Buy amount % of balance in shares
+        if action == 0:  # Buy
+            # Buy fixed amount of asset
             total_possible = int(self.balance / current_price)
-            shares_bought = int(total_possible * amount)
+            if total_possible >= amount:
+                shares_bought = amount
+            else:
+                shares_bought = 0
             prev_cost = self.cost_basis * self.shares_held
             additional_cost = shares_bought * current_price
 
@@ -80,9 +84,13 @@ class DunderBotEnv(gym.Env):
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
             self.shares_held += shares_bought
 
-        elif action_type == 1:  # Sell
-            # Sell amount % of shares held
-            shares_sold = int(self.shares_held * amount)
+        elif action == 1:  # Sell
+            # Sell fixed amount of asset
+            if self.shares_held >= amount: 
+                shares_sold = amount
+            else:
+                shares_sold = 0
+
             self.balance += shares_sold * current_price
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
