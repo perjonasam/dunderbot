@@ -1,9 +1,11 @@
 reward_strategy:
   cumulative_reward: True
 
-action:
-  #amount in units, not ratio
-  fixed_amount: 10
+action_strategy:
+    n_value_bins: 4  # bins for buy and sell each (hold has 1)
+
+
+
   
 text_processing:
   minimum_textdata_length:
