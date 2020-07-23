@@ -4,6 +4,9 @@ reward_strategy:
 action_strategy:
     n_value_bins: 4  # bins for buy and sell each (hold has 1)
 
+data_n_timesteps: 10
+
+train_test_ratio: 0.7
 
 
   

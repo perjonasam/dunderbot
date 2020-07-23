@@ -12,7 +12,6 @@ config = get_config()
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
-MAX_OPEN_POSITIONS = 5
 MAX_STEPS = 20000
 
 INITIAL_ACCOUNT_BALANCE = 10000
@@ -24,42 +23,35 @@ class DunderBotEnv(gym.Env):
         super(DunderBotEnv, self).__init__()
 
         self.df = df
+        # -1 due to inclusive slicing and 0-indexing
+        self.data_n_timesteps = int(config.data_n_timesteps)
+        self.data_n_indexsteps = self.data_n_timesteps - 1
+        
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
         # n_value_bins of different ratio
         self.action_n_bins = int(config.action_strategy.n_value_bins)
         self.action_space = spaces.Discrete(2 * self.action_n_bins + 1)
 
-        # Prices contains the OHCL values for the last five prices
+        # Prices contains the OHCL values for the last data_n_timesteps prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(6, 6), dtype=np.float16)
+            low=0, high=1, shape=(5, self.data_n_timesteps), dtype=np.float16)
 
-    
 
     def _next_observation(self):
         # Get the stock data points for the last 5 days and scale to between 0-1
-        frame = np.array([
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Open'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'High'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Low'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Close'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Volume'].values / MAX_NUM_SHARES,
+        obs = np.array([
+            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'Open'].values / MAX_SHARE_PRICE,
+            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'High'].values / MAX_SHARE_PRICE,
+            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'Low'].values / MAX_SHARE_PRICE,
+            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'Close'].values / MAX_SHARE_PRICE,
+            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'Volume'].values / MAX_NUM_SHARES,
         ])
-
-        # Append additional data and scale each value to between 0-1
-        obs = np.append(frame, [[
-            self.balance / MAX_ACCOUNT_BALANCE,
-            self.max_net_worth / MAX_ACCOUNT_BALANCE,
-            self.shares_held / MAX_NUM_SHARES,
-            self.cost_basis / MAX_SHARE_PRICE,
-            self.total_shares_sold / MAX_NUM_SHARES,
-            self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
-        ]], axis=0)
 
         return obs
 
@@ -119,20 +111,24 @@ class DunderBotEnv(gym.Env):
         # Execute one time step within the environment
         self._take_action(action)
 
+        # TODO: should be df index?
         self.current_step += 1
 
         #TODO: handle timeline properly
-        if self.current_step > len(self.df.loc[:, 'Open'].values) - 6:
-            self.current_step = 0
+        if self.current_step > self.df.index.max():
+            self.current_step = self.data_n_indexsteps
 
         reward = self._get_reward()
         
         # DoD: if we don't have any money, we can't trade
         # TODO: add time series has run out in DoD (see RLTrader for example)
         done = self.net_worth <= 0
+
+        # Next observation
         obs = self._next_observation()
 
         return obs, reward, done, {}
+
 
     def reset(self):
         # Reset the state of the environment to an initial state
@@ -144,12 +140,12 @@ class DunderBotEnv(gym.Env):
         self.total_shares_sold = 0
         self.total_sales_value = 0
 
-        #TODO: handle timeline better
-        # Set the current step to a random point within the data frame
+        # Set the starting step to a random point within the data frame
         self.current_step = random.randint(
-            0, len(self.df.loc[:, 'Open'].values) - 6)
+            self.data_n_indexsteps, self.df.index.max())
 
         return self._next_observation()
+
 
     def render(self, mode='human', close=False):
         # Render the environment to the screen
