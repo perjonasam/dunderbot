@@ -50,7 +50,7 @@ class DunderBotEnv(gym.Env):
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'Close'].values / MAX_SHARE_PRICE,
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'Volume'].values / MAX_NUM_SHARES,
+                        , 'VolumeUSD'].values / MAX_NUM_SHARES,
         ])
 
         return obs
@@ -111,17 +111,16 @@ class DunderBotEnv(gym.Env):
         # Execute one time step within the environment
         self._take_action(action)
 
-        # TODO: should be df index?
         self.current_step += 1
 
-        #TODO: handle timeline properly
+        # Start over again when data is out
         if self.current_step > self.df.index.max():
             self.current_step = self.data_n_indexsteps
 
         reward = self._get_reward()
         
         # DoD: if we don't have any money, we can't trade
-        # TODO: add time series has run out in DoD (see RLTrader for example)
+        # TODO: add time series has run out in DoD (see RLTrader for example)?
         done = self.net_worth <= 0
 
         # Next observation
@@ -160,3 +159,4 @@ class DunderBotEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
+        print('\n')

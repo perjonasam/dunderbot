@@ -6,6 +6,11 @@ action_strategy:
 
 data_n_timesteps: 10
 
+input_data:
+  asset: 'BTCUSD'
+  source: 'Coinbase'
+  tempres: '1d'
+
 train_test_ratio: 0.7
 
 

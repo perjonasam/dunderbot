@@ -8,20 +8,17 @@ from stable_baselines import PPO2
 import pandas as pd
 from src.env.dunderbot_env import DunderBotEnv
 
-def load():
-    df = pd.read_csv('./data/input/AAPL.csv')
-    return df
-
 def preprocess(*, df):
-    df = df.sort_values('Date')
     # The algorithms require a vectorized environment to run
     env = DummyVecEnv([lambda: DunderBotEnv(df)])
     return env
+
 
 def train(*, env, total_timesteps=20000):
     model = PPO2(MlpPolicy, env, verbose=1)
     model.learn(total_timesteps=total_timesteps, log_interval=10)
     return model
+
 
 def predict(*, env, model, total_timesteps=2000):
     obs = env.reset()
