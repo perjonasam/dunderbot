@@ -17,6 +17,7 @@ COPY pyproject.toml pyproject.toml
 # Lock versions (but upgrade pip for OpenCV) and install
 RUN poetry lock
 RUN poetry run pip install --upgrade pip
+RUN poetry run pip install --upgrade setuptools
 RUN poetry install 
 
 # Copy source code

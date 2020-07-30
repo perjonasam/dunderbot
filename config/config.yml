@@ -9,10 +9,13 @@ data_n_timesteps: 10
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
-  tempres: '1d'
+  tempres: '1h'
 
 train_test_ratio: 0.7
 
+monitoring:
+  tensorboard:
+    folder: 'data/monitoring/tensorboard'
 
   
 text_processing:

@@ -1,6 +1,7 @@
 # Running the code
 * Run `make redo` to load docker container
-* Run `make nb` to boot up a jupyter server in the container accessible through local browser
+* Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow link)
+* For (lagged live) monitoring using TensorBoard, run http://127.0.0.1:6006 in browser
 
 
 # Resources

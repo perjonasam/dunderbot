@@ -9,3 +9,4 @@ services:
     entrypoint: ["/bin/bash"]
     ports:
       - 8888:8888
+      - 6006:6006
