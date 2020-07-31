@@ -28,5 +28,6 @@ def predict(*, env, model, total_timesteps=2000):
     for i in range(total_timesteps):
         action, _states = model.predict(obs)
         obs, rewards, done, info = env.step(action)
-        if i % 100 == 0:
-            env.render()
+        #if i % 100 == 0:
+            
+        env.render()

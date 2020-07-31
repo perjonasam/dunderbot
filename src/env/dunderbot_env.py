@@ -5,6 +5,7 @@ from gym import spaces
 import pandas as pd
 import numpy as np
 from .reward_schema import RewardSchema
+from src.env.render.TradingChart import TradingChart
 
 from src.util.config import get_config
 config = get_config()
@@ -17,9 +18,10 @@ MAX_STEPS = 20000
 INITIAL_ACCOUNT_BALANCE = 10000
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
-    metadata = {'render.modes': ['human']}
+    metadata = {'render.modes': ['human', 'system', 'none']}
+    viewer = None
 
-    def __init__(self, df):
+    def __init__(self, df, **kwargs):
         super(DunderBotEnv, self).__init__()
 
         self.df = df
@@ -28,6 +30,7 @@ class DunderBotEnv(gym.Env):
         self.data_n_indexsteps = self.data_n_timesteps - 1
         
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
+        self.render_benchmarks: List[Dict] = kwargs.get('render_benchmarks', [])
 
         # n_value_bins of different ratio
         self.action_n_bins = int(config.action_strategy.n_value_bins)
@@ -63,7 +66,8 @@ class DunderBotEnv(gym.Env):
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
         """
         # TODO: test impact of different orders of actions
-        
+        # TODO: rename for more clarity
+
         # TODO: consider setting this to closing price instead
         # Set the current price to a random price within the time step
         current_price = random.uniform(
@@ -82,6 +86,12 @@ class DunderBotEnv(gym.Env):
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
             self.shares_held += shares_bought
 
+            # Save the trade for rendering
+            self.trades.append({'step': self.current_step,
+                                'amount': shares_bought,
+                                'total': additional_cost,
+                                'type': 'buy'})
+
         elif action >= self.action_n_bins and action < 2 * self.action_n_bins:  # Sell
             ratio = 1/((action-self.action_n_bins) + 2)
             shares_sold = int(self.shares_held * ratio)
@@ -91,8 +101,15 @@ class DunderBotEnv(gym.Env):
             self.total_shares_sold += shares_sold
             self.total_sales_value += shares_sold * current_price
 
-        self.net_worth = self.balance + self.shares_held * current_price
+            # Save the trade for rendering
+            self.trades.append({'step': self.current_step,
+                                'amount': shares_sold,
+                                'total': self.total_sales_value,
+                                'type': 'sell'})
 
+        # Handle net worth variants
+        self.net_worth = self.balance + self.shares_held * current_price
+        self.net_worths.append(self.net_worth)
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
 
@@ -133,30 +150,36 @@ class DunderBotEnv(gym.Env):
         # Reset the state of the environment to an initial state
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
+        self.net_worths = [INITIAL_ACCOUNT_BALANCE]
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.shares_held = 0
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
+        self.trades = []
 
         # Set the starting step to a random point within the data frame
-        self.current_step = random.randint(
-            self.data_n_indexsteps, self.df.index.max())
+        #self.current_step = random.randint(
+        #    self.data_n_indexsteps, self.df.index.max())
+        self.current_step = self.data_n_indexsteps
 
         return self._next_observation()
 
 
-    def render(self, mode='human', close=False):
+    def render(self, mode='human'):
         # Render the environment to the screen
-        profit = self.net_worth - INITIAL_ACCOUNT_BALANCE
+        if mode == 'system':
+            self.logger.info('Price: ' + str(self._current_price()))
+            self.logger.info('Bought: ' + str(self.account_history['asset_bought'][self.current_step]))
+            self.logger.info('Sold: ' + str(self.account_history['asset_sold'][self.current_step]))
+            self.logger.info('Net worth: ' + str(self.net_worths[-1]))
 
-        print(f'Step: {self.current_step}')
-        print(f'Balance: {self.balance}')
-        print(
-            f'Shares held: {self.shares_held} (Total sold: {self.total_shares_sold})')
-        print(
-            f'Avg cost for held shares: {self.cost_basis} (Total sales value: {self.total_sales_value})')
-        print(
-            f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
-        print(f'Profit: {profit}')
-        print('\n')
+        elif mode == 'human':
+            if self.viewer is None:
+                self.viewer = TradingChart(self.df)
+
+            self.viewer.render(self.current_step,
+                            self.net_worths,
+                            self.render_benchmarks,
+                            self.trades)
+
