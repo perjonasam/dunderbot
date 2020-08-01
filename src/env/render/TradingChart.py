@@ -48,11 +48,6 @@ class TradingChart:
         self.net_worth_ax.clear()
 
         # Plot net worths
-        #print(f'Y1: {times}')
-        print(f'Y2: {step_range}')
-        print(f'Y2b: {len(net_worths)}')
-        print(f'Y3: {net_worths}')
-        #print(f'Y4: {net_worths[step_range]}')
         self.net_worth_ax.plot(times, net_worths[step_range], label='Net Worth', color="g")
 
         self._render_benchmarks(step_range, times, benchmarks)
@@ -109,7 +104,7 @@ class TradingChart:
     def _render_volume(self, step_range, times):
         self.volume_ax.clear()
 
-        volume = np.array(self.df['Volume'].values[step_range])
+        volume = np.array(self.df['VolumeUSD'].values[step_range])
 
         self.volume_ax.plot(times, volume,  color='blue')
         self.volume_ax.fill_between(times, volume, color='blue', alpha=0.5)
@@ -120,7 +115,7 @@ class TradingChart:
     def _render_trades(self, step_range, trades):
         for trade in trades:
             if trade['step'] in range(sys.maxsize)[step_range]:
-                Timestamp = self.df['Timestamp'].values[trade['step']]
+                date = self.df['Timestamp'].values[trade['step']]
                 close = self.df['Close'].values[trade['step']]
 
                 if trade['type'] == 'buy':

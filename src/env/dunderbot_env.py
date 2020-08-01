@@ -150,17 +150,17 @@ class DunderBotEnv(gym.Env):
         # Reset the state of the environment to an initial state
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
-        self.net_worths = [INITIAL_ACCOUNT_BALANCE]
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.shares_held = 0
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
         self.trades = []
+        
+        # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
+        self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps + 1)
 
-        # Set the starting step to a random point within the data frame
-        #self.current_step = random.randint(
-        #    self.data_n_indexsteps, self.df.index.max())
+        # Set the starting step to first useable value
         self.current_step = self.data_n_indexsteps
 
         return self._next_observation()
