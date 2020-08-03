@@ -30,4 +30,4 @@ def predict(*, env, model, total_timesteps=2000, rendermode='human'):
         obs, rewards, done, info = env.step(action)
         #if i % 100 == 0:
             
-        env.render(mode=rendermode)
+    env.render(mode=rendermode)

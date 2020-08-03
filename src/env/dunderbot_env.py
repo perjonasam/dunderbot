@@ -1,3 +1,4 @@
+import pickle
 import random
 import json
 import gym
@@ -5,7 +6,7 @@ from gym import spaces
 import pandas as pd
 import numpy as np
 from .reward_schema import RewardSchema
-from src.env.render.TradingChart import TradingChart
+from src.env.render.TradingChartStatic import TradingChartStatic
 
 from src.util.config import get_config
 config = get_config()
@@ -156,7 +157,7 @@ class DunderBotEnv(gym.Env):
         self.total_shares_sold = 0
         self.total_sales_value = 0
         self.trades = []
-        
+
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
         self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps + 1)
 
@@ -168,6 +169,7 @@ class DunderBotEnv(gym.Env):
 
     def render(self, mode='human'):
         # Render the environment to the screen
+        # TODO: make system mode runable (currently throws errors)
         if mode == 'system':
             self.logger.info('Price: ' + str(self._current_price()))
             self.logger.info('Bought: ' + str(self.account_history['asset_bought'][self.current_step]))
@@ -176,7 +178,15 @@ class DunderBotEnv(gym.Env):
 
         elif mode == 'human':
             if self.viewer is None:
-                self.viewer = TradingChart(self.df)
+                self.viewer = TradingChartStatic(self.df)
+
+            all_dict={  'current_step': self.current_step,
+                        'net_worths': self.net_worths,
+                        'render_benchmarks': self.render_benchmarks,
+                        'trades': self.trades}
+            with open('filename.pickle', 'wb') as handle:
+                pickle.dump(all_dict, handle)
+
 
             self.viewer.render(self.current_step,
                             self.net_worths,
