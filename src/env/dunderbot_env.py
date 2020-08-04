@@ -43,7 +43,7 @@ class DunderBotEnv(gym.Env):
 
 
     def _next_observation(self):
-        # Get the stock data points for the last 5 days and scale to between 0-1
+        # Get the stock data points for the last data_n_indexsteps days and scale to between 0-1
         obs = np.array([
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'Open'].values / MAX_SHARE_PRICE,
@@ -179,7 +179,8 @@ class DunderBotEnv(gym.Env):
         elif mode == 'human':
             if self.viewer is None:
                 self.viewer = TradingChartStatic(self.df)
-
+            
+            # TODO: when plot is good, rm this
             all_dict={  'current_step': self.current_step,
                         'net_worths': self.net_worths,
                         'render_benchmarks': self.render_benchmarks,

@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 
 from matplotlib import style
 from datetime import datetime
@@ -22,6 +24,7 @@ class TradingChartStatic:
 
     def __init__(self, df):
         self.df = df
+        #mdates.set_epoch('0000-12-31T00:00:00')
 
 
     def _render_net_worth(self, step_range, times, current_step, net_worths, benchmarks):
@@ -29,10 +32,10 @@ class TradingChartStatic:
         #self.net_worth_ax.clear()
         self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=2, colspan=1)
         # Plot net worths
-        self.net_worth_ax.plot(times, net_worths[step_range], label='Net Worth', color="g")
+        self.net_worth_ax.plot(mdates.date2num(times), net_worths[step_range], label='Net Worth', color="g")
 
         #self._render_benchmarks(step_range, times, benchmarks)
-
+        print(f'net_worth_ax: {self.net_worth_ax.get_xlim()}')
         # Show legend, which uses the label we defined for the plot above
         self.net_worth_ax.legend()
         legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
@@ -54,10 +57,10 @@ class TradingChartStatic:
     def _render_price(self, step_range, times, current_step):
         #self.price_ax.clear()
         self.price_ax = plt.subplot2grid((6, 1), (2, 0), rowspan=8, colspan=1, sharex=self.net_worth_ax)
-        
-        # Plot assetprice
-        self.price_ax.plot(times, self.df['Close'].values[step_range], color="black")
 
+        # Plot assetprice
+        self.price_ax.plot(mdates.date2num(times), self.df['Close'].values[step_range], color="black")
+        print(f'net_worth_ax: {self.net_worth_ax.get_xlim()}')
         # Shift price axis up to give volume chart space
         ylim = self.price_ax.get_ylim()
         self.price_ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * VOLUME_CHART_HEIGHT, ylim[1])
@@ -68,8 +71,8 @@ class TradingChartStatic:
         self.volume_ax = self.price_ax.twinx()
         volume = np.array(self.df['VolumeUSD'].values[step_range])
 
-        self.volume_ax.plot(times, volume,  color='blue')
-        self.volume_ax.fill_between(times, volume, color='blue', alpha=0.5)
+        self.volume_ax.plot(mdates.date2num(times), volume,  color='blue')
+        self.volume_ax.fill_between(mdates.date2num(times), volume, color='blue', alpha=0.5)
 
         self.volume_ax.set_ylim(0, max(volume) / VOLUME_CHART_HEIGHT)
         self.volume_ax.yaxis.set_ticks([])
@@ -85,9 +88,11 @@ class TradingChartStatic:
                     color = 'g'
                 else:
                     color = 'r'
-
-                self.price_ax.annotate(' ', (date, close),
-                                       xytext=(date, close),
+                print(date)
+                print(mdates.date2num(date))
+                
+                self.price_ax.annotate(' ', (mdates.date2num(date), close),
+                                       xytext=(mdates.date2num(date), close),
                                        size="large",
                                        arrowprops=dict(arrowstyle='simple', facecolor=color))
 
@@ -121,11 +126,14 @@ class TradingChartStatic:
         # Create informative title
         self._render_title(net_worths)
 
+        # Render trades
+        self._render_trades(step_range, trades)
+
         # Add padding to make graph easier to view
         plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.90, wspace=0.2, hspace=0)
         
         # Improve x axis annotation
-        date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%m/%d/%Y %H:%M')
+        date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%Y-%m-%d %H:%M')
         date_labels = date_col.values[step_range]
         self.price_ax.set_xticklabels(date_labels, rotation=45, horizontalalignment='right')
 
