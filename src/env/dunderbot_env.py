@@ -16,7 +16,7 @@ MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_STEPS = 20000
 
-INITIAL_ACCOUNT_BALANCE = 10000
+INITIAL_ACCOUNT_BALANCE = 10000.0
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
     metadata = {'render.modes': ['human', 'system', 'none']}
@@ -31,7 +31,7 @@ class DunderBotEnv(gym.Env):
         self.data_n_indexsteps = self.data_n_timesteps - 1
         
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
-        self.render_benchmarks: List[Dict] = kwargs.get('render_benchmarks', [])
+        #self.render_benchmarks: List[Dict] = kwargs.get('render_benchmarks', [])
 
         # n_value_bins of different ratio
         self.action_n_bins = int(config.action_strategy.n_value_bins)
@@ -69,15 +69,13 @@ class DunderBotEnv(gym.Env):
         # TODO: test impact of different orders of actions
         # TODO: rename for more clarity
 
-        # TODO: consider setting this to closing price instead
         # Set the current price to a random price within the time step
-        current_price = random.uniform(
-            self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"])
+        current_price = self.df.loc[self.current_step, "Close"]
 
         if action < self.action_n_bins:  # Buy
-            total_possible = int(self.balance / current_price)
+            total_possible = self.balance / current_price
             ratio = 1/(action + 2)  # +1 for 0 first of array, and +1 for 1/2 as max ratio
-            shares_bought = int(total_possible * ratio)
+            shares_bought = total_possible * ratio
            
             prev_cost = self.cost_basis * self.shares_held
             additional_cost = shares_bought * current_price
@@ -95,7 +93,7 @@ class DunderBotEnv(gym.Env):
 
         elif action >= self.action_n_bins and action < 2 * self.action_n_bins:  # Sell
             ratio = 1/((action-self.action_n_bins) + 2)
-            shares_sold = int(self.shares_held * ratio)
+            shares_sold = self.shares_held * ratio
 
             self.balance += shares_sold * current_price
             self.shares_held -= shares_sold
@@ -113,7 +111,8 @@ class DunderBotEnv(gym.Env):
         self.net_worths.append(self.net_worth)
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
-
+        
+        self.shares_held_hist.append(self.shares_held)
         if self.shares_held == 0:
             self.cost_basis = 0
 
@@ -160,6 +159,7 @@ class DunderBotEnv(gym.Env):
 
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
         self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps + 1)
+        self.shares_held_hist = [0.0] * (self.data_n_indexsteps + 1)
 
         # Set the starting step to first useable value
         self.current_step = self.data_n_indexsteps
@@ -183,14 +183,16 @@ class DunderBotEnv(gym.Env):
             # TODO: when plot is good, rm this
             all_dict={  'current_step': self.current_step,
                         'net_worths': self.net_worths,
-                        'render_benchmarks': self.render_benchmarks,
-                        'trades': self.trades}
-            with open('filename.pickle', 'wb') as handle:
+                        #'render_benchmarks': self.render_benchmarks,
+                        'trades': self.trades,
+                        'shares_held_hist': self.shares_held_hist}
+            with open('all_dict_pred.pickle', 'wb') as handle:
                 pickle.dump(all_dict, handle)
 
 
             self.viewer.render(self.current_step,
                             self.net_worths,
-                            self.render_benchmarks,
-                            self.trades)
+                            #self.render_benchmarks,
+                            self.trades,
+                            self.shares_held_hist)
 

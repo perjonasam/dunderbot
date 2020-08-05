@@ -24,10 +24,9 @@ class TradingChartStatic:
 
     def __init__(self, df):
         self.df = df
-        #mdates.set_epoch('0000-12-31T00:00:00')
 
 
-    def _render_net_worth(self, step_range, times, current_step, net_worths, benchmarks):
+    def _render_net_worth(self, step_range, times, current_step, net_worths):
         # Clear the frame rendered last step
         #self.net_worth_ax.clear()
         self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=2, colspan=1)
@@ -35,7 +34,6 @@ class TradingChartStatic:
         self.net_worth_ax.plot(mdates.date2num(times), net_worths[step_range], label='Net Worth', color="g")
 
         #self._render_benchmarks(step_range, times, benchmarks)
-        print(f'net_worth_ax: {self.net_worth_ax.get_xlim()}')
         # Show legend, which uses the label we defined for the plot above
         self.net_worth_ax.legend()
         legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
@@ -50,7 +48,7 @@ class TradingChartStatic:
                   'magenta', 'yellow', 'black', 'red', 'green']
 
         for i, benchmark in enumerate(benchmarks):
-            self.net_worth_ax.plot(times, benchmark['values'][step_range],
+            self.net_worth_ax.plot(mdates.date2num(times), benchmark['values'][step_range],
                                    label=benchmark['label'], color=colors[i % len(colors)], alpha=0.3)
 
 
@@ -60,7 +58,7 @@ class TradingChartStatic:
 
         # Plot assetprice
         self.price_ax.plot(mdates.date2num(times), self.df['Close'].values[step_range], color="black")
-        print(f'net_worth_ax: {self.net_worth_ax.get_xlim()}')
+        
         # Shift price axis up to give volume chart space
         ylim = self.price_ax.get_ylim()
         self.price_ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * VOLUME_CHART_HEIGHT, ylim[1])
@@ -81,18 +79,18 @@ class TradingChartStatic:
     def _render_trades(self, step_range, trades):
         for trade in trades:
             if trade['step'] in range(sys.maxsize)[step_range]:
-                date = self.df['Timestamp'].values[trade['step']]
+                time = self.df['Timestamp'].values[trade['step']]
                 close = self.df['Close'].values[trade['step']]
 
                 if trade['type'] == 'buy':
                     color = 'g'
-                else:
+                elif trade['type'] == 'sell':
                     color = 'r'
-                print(date)
-                print(mdates.date2num(date))
+                else:
+                    color = 'b'
                 
-                self.price_ax.annotate(' ', (mdates.date2num(date), close),
-                                       xytext=(mdates.date2num(date), close),
+                self.price_ax.annotate(' ', (mdates.date2num(time), close),
+                                       xytext=(mdates.date2num(time), close),
                                        size="large",
                                        arrowprops=dict(arrowstyle='simple', facecolor=color))
 
@@ -104,7 +102,7 @@ class TradingChartStatic:
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
 
-    def render(self, current_step, net_worths, benchmarks, trades, window_size=200, figwidth=15):
+    def render(self, current_step, net_worths, trades, shares_held_hist, window_size=200, figwidth=15):
         window_start = max(current_step - window_size, 0)
         step_range = slice(window_start, current_step + 1)
         times = self.df['Timestamp'].values[step_range]
@@ -114,8 +112,11 @@ class TradingChartStatic:
         # Create a figure on screen and set the title
         self.fig = plt.figure(figsize=(figwidth, figwidth*0.7))
 
+        # Add padding to make graph easier to view
+        plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.90, wspace=0.2, hspace=0)
+        
         # Create top subplot for net worth axis
-        self._render_net_worth(step_range, times, current_step, net_worths, benchmarks)
+        self._render_net_worth(step_range, times, current_step, net_worths)
 
         # Create bottom subplot for shared price/volume axis
         self._render_price(step_range, times, current_step)
@@ -129,12 +130,10 @@ class TradingChartStatic:
         # Render trades
         self._render_trades(step_range, trades)
 
-        # Add padding to make graph easier to view
-        plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.90, wspace=0.2, hspace=0)
-        
         # Improve x axis annotation
         date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%Y-%m-%d %H:%M')
         date_labels = date_col.values[step_range]
+        self.price_ax.set_xticks(mdates.date2num(date_labels))
         self.price_ax.set_xticklabels(date_labels, rotation=45, horizontalalignment='right')
 
         # Hide duplicate net worth date labels
