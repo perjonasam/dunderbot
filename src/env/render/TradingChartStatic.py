@@ -29,7 +29,7 @@ class TradingChartStatic:
     def _render_net_worth(self, step_range, times, current_step, net_worths):
         # Clear the frame rendered last step
         #self.net_worth_ax.clear()
-        self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=2, colspan=1)
+        self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=1, colspan=1)
         # Plot net worths
         self.net_worth_ax.plot(mdates.date2num(times), net_worths[step_range], label='Net Worth', color="g")
 
@@ -52,17 +52,37 @@ class TradingChartStatic:
                                    label=benchmark['label'], color=colors[i % len(colors)], alpha=0.3)
 
 
-    def _render_price(self, step_range, times, current_step):
-        #self.price_ax.clear()
-        self.price_ax = plt.subplot2grid((6, 1), (2, 0), rowspan=8, colspan=1, sharex=self.net_worth_ax)
+    def _render_assets_held(self, step_range, times, current_step, assets_held_hist):
+        self.assets_ax = plt.subplot2grid((6, 1), (1, 0), rowspan=1, colspan=1, sharex=self.net_worth_ax)
 
         # Plot assetprice
-        self.price_ax.plot(mdates.date2num(times), self.df['Close'].values[step_range], color="black")
+        self.assets_ax.plot(mdates.date2num(times), assets_held_hist[step_range], label='Assets held', color="red")
+
+        # Shift price axis up to give volume chart space
+        ylim = self.assets_ax.get_ylim()
+        self.assets_ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * VOLUME_CHART_HEIGHT, ylim[1])
+
+        self.assets_ax.legend()
+        legend = self.assets_ax.legend(loc=2, ncol=2, prop={'size': 8})
+        legend.get_frame().set_alpha(0.4)
+
+
+    def _render_price(self, step_range, times, current_step):
+        #self.price_ax.clear()
+        self.price_ax = plt.subplot2grid((6, 1), (2, 0), rowspan=4, colspan=1, sharex=self.net_worth_ax)
+
+        # Plot assetprice
+        self.price_ax.plot(mdates.date2num(times), self.df['Close'].values[step_range], label='Price', color="black")
         
         # Shift price axis up to give volume chart space
         ylim = self.price_ax.get_ylim()
         self.price_ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * VOLUME_CHART_HEIGHT, ylim[1])
 
+        self.price_ax.legend()
+        legend = self.price_ax.legend(loc=2, ncol=2, prop={'size': 8})
+        legend.get_frame().set_alpha(0.4)
+
+    
 
     def _render_volume(self, step_range, times):
         #self.volume_ax.clear()
@@ -102,22 +122,25 @@ class TradingChartStatic:
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
 
-    def render(self, current_step, net_worths, trades, shares_held_hist, window_size=200, figwidth=15):
+    def render(self, current_step, net_worths, trades, assets_held_hist, window_size=200, figwidth=15):
         window_start = max(current_step - window_size, 0)
-        step_range = slice(window_start, current_step + 1)
+        step_range = slice(window_start, current_step)
         times = self.df['Timestamp'].values[step_range]
 
         self.data_n_timesteps = int(config.data_n_timesteps)
 
         # Create a figure on screen and set the title
-        self.fig = plt.figure(figsize=(figwidth, figwidth*0.7))
+        self.fig = plt.figure(figsize=(figwidth, figwidth*0.8))
 
         # Add padding to make graph easier to view
-        plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.90, wspace=0.2, hspace=0)
+        plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.95, wspace=0.2, hspace=0.05)
         
         # Create top subplot for net worth axis
         self._render_net_worth(step_range, times, current_step, net_worths)
 
+        # Create middle subplot for held assets axis
+        self._render_assets_held(step_range, times, current_step, assets_held_hist)
+        
         # Create bottom subplot for shared price/volume axis
         self._render_price(step_range, times, current_step)
         

@@ -158,8 +158,8 @@ class DunderBotEnv(gym.Env):
         self.trades = []
 
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
-        self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps + 1)
-        self.shares_held_hist = [0.0] * (self.data_n_indexsteps + 1)
+        self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps)
+        self.shares_held_hist = [0.0] * (self.data_n_indexsteps)
 
         # Set the starting step to first useable value
         self.current_step = self.data_n_indexsteps
@@ -183,7 +183,6 @@ class DunderBotEnv(gym.Env):
             # TODO: when plot is good, rm this
             all_dict={  'current_step': self.current_step,
                         'net_worths': self.net_worths,
-                        #'render_benchmarks': self.render_benchmarks,
                         'trades': self.trades,
                         'shares_held_hist': self.shares_held_hist}
             with open('all_dict_pred.pickle', 'wb') as handle:
