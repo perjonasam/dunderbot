@@ -5,7 +5,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-
 from matplotlib import style
 from datetime import datetime
 from pandas.plotting import register_matplotlib_converters
@@ -122,9 +121,9 @@ class TradingChartStatic:
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
 
-    def render(self, current_step, net_worths, trades, assets_held_hist, window_size=200, figwidth=15):
-        window_start = max(current_step - window_size, 0)
-        step_range = slice(window_start, current_step)
+    def render(self, current_step, net_worths, trades, assets_held_hist, figwidth=15):
+        #window_start = max(current_step - window_size, 0)
+        step_range = slice(0, current_step)
         times = self.df['Timestamp'].values[step_range]
 
         self.data_n_timesteps = int(config.data_n_timesteps)
@@ -153,11 +152,19 @@ class TradingChartStatic:
         # Render trades
         self._render_trades(step_range, trades)
 
+        # Improve x axis annotation (old solution)
+        # date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%Y-%m-%d %H:%M')
+        # date_labels = date_col.values[step_range]
+        # self.price_ax.set_xticks(mdates.date2num(date_labels))
+        # self.price_ax.set_xticklabels(date_labels, rotation=45, horizontalalignment='right')
+
         # Improve x axis annotation
-        date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%Y-%m-%d %H:%M')
-        date_labels = date_col.values[step_range]
-        self.price_ax.set_xticks(mdates.date2num(date_labels))
-        self.price_ax.set_xticklabels(date_labels, rotation=45, horizontalalignment='right')
+        locator = mdates.AutoDateLocator() 
+        self.price_ax.xaxis.set_major_locator(locator) 
+        #self.price_ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+        self.price_ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M')) 
+        self.price_ax.set_xlim([mdates.date2num(times[0]), mdates.date2num(times[-1])])
+        self.fig.autofmt_xdate()
 
         # Hide duplicate net worth date labels
         plt.setp(self.net_worth_ax.get_xticklabels(), visible=False)
