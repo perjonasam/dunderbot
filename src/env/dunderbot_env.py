@@ -70,44 +70,53 @@ class DunderBotEnv(gym.Env):
         # TODO: rename for more clarity
 
         # Set the current price to a random price within the time step
-        current_price = self.df.loc[self.current_step, "Close"]
+        self.current_price = self.df.loc[self.current_step, "Close"]
 
         if action < self.action_n_bins:  # Buy
-            total_possible = self.balance / current_price
+            total_possible = self.balance / self.current_price
             ratio = 1/(action + 2)  # +1 for 0 first of array, and +1 for 1/2 as max ratio
             shares_bought = total_possible * ratio
            
             prev_cost = self.cost_basis * self.shares_held
-            additional_cost = shares_bought * current_price
+            additional_cost = shares_bought * self.current_price
 
             self.balance -= additional_cost
             self.cost_basis = (
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
-            self.shares_held += shares_bought
 
             # Save the trade for rendering
             self.trades.append({'step': self.current_step,
                                 'amount': shares_bought,
                                 'total': additional_cost,
-                                'type': 'buy'})
+                                'type': 'buy',
+                                'action_ratio': ratio})
 
         elif action >= self.action_n_bins and action < 2 * self.action_n_bins:  # Sell
             ratio = 1/((action-self.action_n_bins) + 2)
             shares_sold = self.shares_held * ratio
 
-            self.balance += shares_sold * current_price
+            self.balance += shares_sold * self.current_price
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
-            self.total_sales_value += shares_sold * current_price
+            self.total_sales_value += shares_sold * self.current_price
 
             # Save the trade for rendering
             self.trades.append({'step': self.current_step,
                                 'amount': shares_sold,
                                 'total': self.total_sales_value,
-                                'type': 'sell'})
+                                'type': 'sell',
+                                'action_ratio': ratio})
+        
+        elif action == 2 * self.action_n_bins:  # Hold
+            # Save the trade for rendering
+            self.trades.append({'step': self.current_step,
+                                'amount': None,
+                                'total': None,
+                                'type': 'hold',
+                                'action_ratio': None})
 
         # Handle net worth variants
-        self.net_worth = self.balance + self.shares_held * current_price
+        self.net_worth = self.balance + self.shares_held * self.current_price
         self.net_worths.append(self.net_worth)
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
@@ -171,15 +180,10 @@ class DunderBotEnv(gym.Env):
         # Render the environment to the screen
         # TODO: make system mode runable (currently throws errors)
         if mode == 'system':
-            self.logger.info('Price: ' + str(self._current_price()))
-            self.logger.info('Bought: ' + str(self.account_history['asset_bought'][self.current_step]))
-            self.logger.info('Sold: ' + str(self.account_history['asset_sold'][self.current_step]))
-            self.logger.info('Net worth: ' + str(self.net_worths[-1]))
+            print('Price: ' + str(self.current_price))
+            print('Net worth: ' + str(self.net_worths[-1]))
 
         elif mode == 'human':
-            if self.viewer is None:
-                self.viewer = TradingChartStatic(self.df)
-            
             # TODO: when plot is good, rm this
             all_dict={  'current_step': self.current_step,
                         'net_worths': self.net_worths,
@@ -188,10 +192,13 @@ class DunderBotEnv(gym.Env):
             with open('all_dict_pred.pickle', 'wb') as handle:
                 pickle.dump(all_dict, handle)
 
-
+            # Render static TradingChart
+            self.viewer = TradingChartStatic(self.df)
             self.viewer.render(self.current_step,
                             self.net_worths,
-                            #self.render_benchmarks,
                             self.trades,
                             self.shares_held_hist)
 
+            # Render action distribution
+            #self.viewer = ActionDistribution(self.df)
+            

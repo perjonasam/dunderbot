@@ -102,11 +102,13 @@ class TradingChartStatic:
                 close = self.df['Close'].values[trade['step']]
 
                 if trade['type'] == 'buy':
-                    color = 'g'
+                    cmap = matplotlib.cm.get_cmap('Greens')
+                    color = cmap(trade['action_ratio'] * 2)
                 elif trade['type'] == 'sell':
-                    color = 'r'
-                else:
-                    color = 'b'
+                    cmap = matplotlib.cm.get_cmap('Reds')
+                    color = cmap(trade['action_ratio'] * 2)
+                elif trade['type'] == 'hold':
+                    color = 'lightgray'
                 
                 self.price_ax.annotate(' ', (mdates.date2num(time), close),
                                        xytext=(mdates.date2num(time), close),
@@ -134,31 +136,17 @@ class TradingChartStatic:
         # Add padding to make graph easier to view
         plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.95, wspace=0.2, hspace=0.05)
         
-        # Create top subplot for net worth axis
+        # Render subplots which share x-axis (price)
         self._render_net_worth(step_range, times, current_step, net_worths)
-
-        # Create middle subplot for held assets axis
         self._render_assets_held(step_range, times, current_step, assets_held_hist)
-        
-        # Create bottom subplot for shared price/volume axis
         self._render_price(step_range, times, current_step)
-        
-        # Create a new axis for volume which shares its x-axis with price
         self._render_volume(step_range, times)
-        
-        # Create informative title
         self._render_title(net_worths)
 
         # Render trades
         self._render_trades(step_range, trades)
 
-        # Improve x axis annotation (old solution)
-        # date_col = pd.to_datetime(self.df['Timestamp'], unit='s').dt.strftime('%Y-%m-%d %H:%M')
-        # date_labels = date_col.values[step_range]
-        # self.price_ax.set_xticks(mdates.date2num(date_labels))
-        # self.price_ax.set_xticklabels(date_labels, rotation=45, horizontalalignment='right')
-
-        # Improve x axis annotation
+        # Improve x axis annotation (use either DateFormatter or ConciseDateFormatter)
         locator = mdates.AutoDateLocator() 
         self.price_ax.xaxis.set_major_locator(locator) 
         #self.price_ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
@@ -169,7 +157,6 @@ class TradingChartStatic:
         # Hide duplicate net worth date labels
         plt.setp(self.net_worth_ax.get_xticklabels(), visible=False)
         
-        # Show the graph without blocking the rest of the program
         plt.show()
 
     def close(self):
