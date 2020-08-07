@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from .reward_schema import RewardSchema
 from src.env.render.TradingChartStatic import TradingChartStatic
+from src.env.render.ActionDistribution import ActionDistribution
 
 from src.util.config import get_config
 config = get_config()
@@ -60,22 +61,22 @@ class DunderBotEnv(gym.Env):
         return obs
 
 
-    def get_action_from_action(self, action):
+    def get_trade_from_action(self, action):
         """There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
         
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold."""
         
         if action < self.action_n_bins:
-            action_type = 'buy'
+            trade = 'buy'
             ratio = 1/(action + 2)  # +1 for 0 first of array, and +1 for 1/2 as max ratio
         elif action >= self.action_n_bins and action < 2 * self.action_n_bins:
-            action_type = 'sell'
+            trade = 'sell'
             ratio = 1/((action-self.action_n_bins) + 2)
         elif action == 2 * self.action_n_bins:
-            action_type = 'hold'
+            trade = 'hold'
             ratio = None
-        return action_type, ratio
+        return trade, ratio
 
 
     def _take_action(self, action):
@@ -92,9 +93,9 @@ class DunderBotEnv(gym.Env):
         self.current_price = self.df.loc[self.current_step, "Close"]
         
         # Fetch the trade
-        action_type, ratio = self.get_action_from_action(action)
+        trade, ratio = self.get_trade_from_action(action)
 
-        if action_type == 'buy':  # Buy
+        if trade == 'buy':  # Buy
             total_possible = self.balance / self.current_price
             shares_bought = total_possible * ratio
            
@@ -109,10 +110,10 @@ class DunderBotEnv(gym.Env):
             self.trades.append({'step': self.current_step,
                                 'amount': shares_bought,
                                 'total': additional_cost,
-                                'type': 'buy',
+                                'type': trade,
                                 'action_ratio': ratio})
 
-        elif action_type == 'sell':  # Sell
+        elif trade == 'sell':  # Sell
             shares_sold = self.shares_held * ratio
 
             self.balance += shares_sold * self.current_price
@@ -124,15 +125,15 @@ class DunderBotEnv(gym.Env):
             self.trades.append({'step': self.current_step,
                                 'amount': shares_sold,
                                 'total': self.total_sales_value,
-                                'type': 'sell',
+                                'type': trade,
                                 'action_ratio': ratio})
         
-        elif action_type == 'hold':  # Hold
+        elif trade == 'hold':  # Hold
             # Save the trade for rendering
             self.trades.append({'step': self.current_step,
                                 'amount': None,
                                 'total': None,
-                                'type': 'hold',
+                                'type': trade,
                                 'action_ratio': None})
 
         # Handle net worth variants
@@ -198,20 +199,19 @@ class DunderBotEnv(gym.Env):
 
     def render(self, mode='human'):
         # Render the environment to the screen
-        # TODO: make system mode runable (currently throws errors)
+        # TODO: when plot is good and has stabilized, rm this
+        all_dict={  'current_step': self.current_step,
+                    'net_worths': self.net_worths,
+                    'trades': self.trades,
+                    'shares_held_hist': self.shares_held_hist}
+        with open('all_dict_pred.pickle', 'wb') as handle:
+            pickle.dump(all_dict, handle)
+
         if mode == 'system':
             print('Price: ' + str(self.current_price))
             print('Net worth: ' + str(self.net_worths[-1]))
 
         elif mode == 'human':
-            # TODO: when plot is good and has stabilized, rm this
-            # all_dict={  'current_step': self.current_step,
-            #             'net_worths': self.net_worths,
-            #             'trades': self.trades,
-            #             'shares_held_hist': self.shares_held_hist}
-            # with open('all_dict_pred.pickle', 'wb') as handle:
-            #     pickle.dump(all_dict, handle)
-
             # Render static TradingChart
             self.viewer = TradingChartStatic(self.df)
             self.viewer.render(self.current_step,
@@ -220,5 +220,7 @@ class DunderBotEnv(gym.Env):
                             self.shares_held_hist)
 
             # Render action distribution
-            #self.viewer = ActionDistribution(self.df)
+            #self.viewer = ActionDistribution()
+            #self.viewer.render(self.trades)
+
             
