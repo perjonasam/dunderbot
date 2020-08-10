@@ -220,7 +220,7 @@ class DunderBotEnv(gym.Env):
                             self.shares_held_hist)
 
             # Render action distribution
-            #self.viewer = ActionDistribution()
-            #self.viewer.render(self.trades)
+            self.viewer = ActionDistribution(self.trades)
+            self.viewer.render()
 
             
