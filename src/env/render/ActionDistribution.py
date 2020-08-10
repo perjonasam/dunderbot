@@ -11,6 +11,7 @@ class ActionDistribution:
     def render(self, figwidth=15):
         # Convert to pandas df and plot. Simple barplot with labels.
         df = pd.DataFrame(self.trades)
+        df = df.fillna(0)
         df['action_amount'] = df['action_amount'].round(3)
         
         df_counts = df.groupby(['type', 'action_amount']).size()

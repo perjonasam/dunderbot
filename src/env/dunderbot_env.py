@@ -110,13 +110,8 @@ class DunderBotEnv(gym.Env):
             price_adjustment = (1 + (self.commission_percent / 100)) * (1 + (self.max_slippage_percent / 100))
             buy_price = round(self.current_price * price_adjustment, self.base_precision)
             amount_asset_to_buy = round(self.balance * action_amount / buy_price, self.asset_precision)
-            asset_held = False
         elif action_type == 'sell' and self.asset_held >= self.min_amount_limit:
             amount_asset_to_sell = round(self.asset_held * action_amount, self.asset_precision)
-            asset_held = False
-        elif action_type == 'hold':
-            asset_held = True
-
         return amount_asset_to_buy, amount_asset_to_sell
 
 
@@ -143,7 +138,7 @@ class DunderBotEnv(gym.Env):
                                                                                           balance=self.balance,
                                                                                           asset_held=self.asset_held,
                                                                                           current_price=self.current_price)
-
+        print(action_type)
         if asset_bought:
             self.asset_held += asset_bought
             self.balance -= purchase_cost
@@ -157,6 +152,7 @@ class DunderBotEnv(gym.Env):
             self.asset_held -= asset_sold
             self.balance += sale_revenue
 
+            # TODO: lookup this thing copied from RLTrader
             #self.reward_strategy.reset_reward()
 
             self.trades.append({'step': self.current_step,
