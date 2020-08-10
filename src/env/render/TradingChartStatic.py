@@ -103,10 +103,10 @@ class TradingChartStatic:
 
                 if trade['type'] == 'buy':
                     cmap = matplotlib.cm.get_cmap('Greens')
-                    color = cmap(trade['action_ratio'] * 2)
+                    color = cmap(trade['action_amount'] * 2)
                 elif trade['type'] == 'sell':
                     cmap = matplotlib.cm.get_cmap('Reds')
-                    color = cmap(trade['action_ratio'] * 2)
+                    color = cmap(trade['action_amount'] * 2)
                 elif trade['type'] == 'hold':
                     color = 'lightgray'
                 
@@ -123,7 +123,8 @@ class TradingChartStatic:
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
 
-    def render(self, current_step, net_worths, trades, assets_held_hist, figwidth=15):
+    def render(self, current_step, net_worths, trades, account_history, figwidth=15):
+        assets_held_hist = account_history['asset_held']
         #window_start = max(current_step - window_size, 0)
         step_range = slice(0, current_step)
         times = self.df['Timestamp'].values[step_range]
