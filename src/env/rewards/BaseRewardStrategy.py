@@ -12,7 +12,7 @@ class BaseRewardStrategy(object):
     def get_reward(self, net_worth: list) -> float:
         """
         Arguments:
-            portfolio: The portfolio being used by the environment.
+            net_worth: history of net_worth
         Returns:
             A float corresponding to the benefit earned by the action taken this timestep.
         """
