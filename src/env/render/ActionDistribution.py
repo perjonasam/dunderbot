@@ -11,12 +11,12 @@ class ActionDistribution:
     def render(self, figwidth=15):
         # Convert to pandas df and plot. Simple barplot with labels.
         df = pd.DataFrame(self.trades)
-        df = df.fillna(0)
+        df = df.fillna(0)  # Due to hold having some NaN fields
         df['action_amount'] = df['action_amount'].round(3)
         
         df_counts = df.groupby(['type', 'action_amount']).size()
         df_perc = df_counts/len(df)*100
-        ax = df_perc.plot.bar(figsize=(figwidth,figwidth/3), title='Trade ratio distribution in % of timesteps');
+        ax = df_perc.plot.bar(figsize=(figwidth,figwidth/3), title='Trade ratio distribution in % of timesteps')
         ax.set_ylabel("% of timesteps")
         ax.set_xlabel("trade with ratio")
 

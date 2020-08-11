@@ -9,6 +9,7 @@ from .reward_schema import RewardSchema
 from src.env.render.TradingChartStatic import TradingChartStatic
 from src.env.render.ActionDistribution import ActionDistribution
 from src.env.trade.TradeStrategy import TradeStrategy
+from src.env.rewards import BaseRewardStrategy, IncrementalNetWorth, RiskAdjustedReturns
 
 from src.util.config import get_config
 config = get_config()
@@ -59,6 +60,11 @@ class DunderBotEnv(gym.Env):
                                              asset_precision=self.asset_precision,
                                              min_cost_limit=self.min_cost_limit,
                                              min_amount_limit=self.min_amount_limit)
+
+        # Set Reward Strategy
+        #TODO: move this choice to config somehow
+        self.reward_strategy = IncrementalNetWorth()
+
 
 
     def _next_observation(self):
@@ -138,7 +144,7 @@ class DunderBotEnv(gym.Env):
                                                                                           balance=self.balance,
                                                                                           asset_held=self.asset_held,
                                                                                           current_price=self.current_price)
-        print(action_type)
+
         if asset_bought:
             self.asset_held += asset_bought
             self.balance -= purchase_cost
@@ -233,7 +239,28 @@ class DunderBotEnv(gym.Env):
         #     self.cost_basis = 0
 
 
+    def _reward(self):
+        reward = self.reward_strategy.get_reward(net_worths=self.net_worths)
+
+        reward = float(reward) if np.isfinite(float(reward)) else 0
+
+        self.rewards.append(reward)
+
+        #if self.stationarize_rewards:
+        #    rewards = difference(self.rewards, inplace=False)
+        #else:
+        rewards = self.rewards
+
+        #if self.normalize_rewards:
+        #    mean_normalize(rewards, inplace=True)
+
+        rewards = np.array(rewards).flatten()
+
+        return float(rewards[-1])
+
+
     def _get_reward(self):
+
         Reward = RewardSchema(balance=self.balance, 
                                 current_step=self.current_step, 
                                 MAX_STEPS=MAX_STEPS)
@@ -250,7 +277,8 @@ class DunderBotEnv(gym.Env):
         if self.current_step > self.df.index.max():
             self.current_step = self.data_n_indexsteps
 
-        reward = self._get_reward()
+        #reward = self._get_reward()
+        reward = self._reward()
         
         # DoD: if we don't have any money, we can't trade
         # TODO: add time series has run out in DoD (see RLTrader for example)?
@@ -272,6 +300,9 @@ class DunderBotEnv(gym.Env):
         self.total_asset_sold = 0
         self.total_sales_value = 0
         self.trades = []
+        
+        # NOTE: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
+        self.rewards = [0]
 
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
         self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps)
