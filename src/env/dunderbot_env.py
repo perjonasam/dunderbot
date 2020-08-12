@@ -14,7 +14,7 @@ config = get_config()
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_ASSET = 2147483647
-MAX_SHARE_PRICE = 5000
+MAX_SHARE_PRICE = 50000
 MAX_STEPS = 20000
 
 INITIAL_ACCOUNT_BALANCE = 10000.0
@@ -32,15 +32,15 @@ class DunderBotEnv(gym.Env):
         self.data_n_indexsteps = self.data_n_timesteps - 1
         
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
-        #self.render_benchmarks: List[Dict] = kwargs.get('render_benchmarks', [])
 
-        # n_value_bins of different ratio
+        # actions: buy/sell n_value_bins of different ratio of balance/assets held + hold
         self.action_n_bins = int(config.action_strategy.n_value_bins)
         self.action_space = spaces.Discrete(2 * self.action_n_bins + 1)
 
-        # Prices contains the OHCL values for the last data_n_timesteps prices
+        # Observations are price and volume data the last data_n_timesteps, and portfolio features
+        self.obs_array_length = self.data_n_timesteps*2 + int(config.n_nonprice_features)
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(2, self.data_n_timesteps), dtype=np.float16)
+            low=0, high=1, shape=(1, self.obs_array_length), dtype=np.float16)
 
         # Set trade strategy with some constants
         # TODO: select best values here (now using default in RLTrader)
@@ -66,23 +66,27 @@ class DunderBotEnv(gym.Env):
 
 
     def _next_observation(self):
-        # Get the stock data points for the last data_n_indexsteps days and scale to between 0-1
+        # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
         obs = np.array([
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'Close'].values / MAX_SHARE_PRICE,
+                        , 'Close'].values / MAX_SHARE_PRICE])
+        obs = np.append(obs, [[
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'VolumeUSD'].values / MAX_NUM_ASSET,
-        ])
+        ]])
+        
+        # Non-price/volume features
+        # NOTE: if changed, don't forget to set n_features in config
+        obs = np.append(obs, [[
+            self.balance / MAX_ACCOUNT_BALANCE,
+            self.net_worths[-1] / MAX_ACCOUNT_BALANCE,
+            self.asset_held / MAX_NUM_ASSET,
+        ]])
 
-        # Append additional data and scale each value to between 0-1
-        # obs = np.append(obs, [[
-        #     self.balance / MAX_ACCOUNT_BALANCE,
-        #     self.max_net_worth / MAX_ACCOUNT_BALANCE,
-        #     self.asset_held / MAX_NUM_ASSET,
-        #     self.cost_basis / MAX_SHARE_PRICE,
-        #     self.total_asset_sold / MAX_NUM_ASSET,
-        #     self.total_sales_value / (MAX_NUM_ASSET * MAX_SHARE_PRICE),
-        # ]])
+        assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
+
+        assert len(obs) == self.obs_array_length, \
+            f'Actual obs array is {len(obs)} long, but specified to be {self.obs_array_length}'
 
         return obs
 
@@ -125,12 +129,8 @@ class DunderBotEnv(gym.Env):
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
         
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
-        """
-
-        # TODO: rename for more clarity
-        
-        
-
+        """        
+    
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
         
@@ -156,7 +156,6 @@ class DunderBotEnv(gym.Env):
             self.asset_held -= asset_sold
             self.balance += sale_revenue
 
-            # TODO: lookup this thing copied from RLTrader
             #self.reward_strategy.reset_reward()
 
             self.trades.append({'step': self.current_step,
@@ -232,7 +231,6 @@ class DunderBotEnv(gym.Env):
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.asset_held = 0
         self.cost_basis = 0
-        self.total_asset_sold = 0
         self.total_sales_value = 0
         self.trades = []
         

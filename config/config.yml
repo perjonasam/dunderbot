@@ -6,6 +6,8 @@ action_strategy:
 
 data_n_timesteps: 10
 
+n_nonprice_features: 3
+
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
