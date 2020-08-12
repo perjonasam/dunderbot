@@ -25,9 +25,8 @@ def train(*, env, total_timesteps=20000):
 
 def predict(*, env, model, total_timesteps=2000, rendermode='human'):
     obs = env.reset()
-    for i in range(total_timesteps):
+    for _ in range(total_timesteps):
         action, _states = model.predict(obs)
         obs, rewards, done, info = env.step(action)
-        #if i % 100 == 0:
             
     env.render(mode=rendermode)

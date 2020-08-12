@@ -5,9 +5,9 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
-from src.env.render import TradingChartStatic, ActionDistribution
+from src.env.render import TradingChartStatic, ActionDistribution, RewardDevelopment
 from src.env.trade.TradeStrategy import TradeStrategy
-from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns #, BaseRewardStrategy
+from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns
 
 from src.util.config import get_config
 config = get_config()
@@ -261,7 +261,8 @@ class DunderBotEnv(gym.Env):
         all_dict={  'current_step': self.current_step,
                     'net_worths': self.net_worths,
                     'trades': self.trades,
-                    'account_history': self.account_history}
+                    'account_history': self.account_history,
+                    'rewards': self.rewards}
         with open('all_dict_pred.pickle', 'wb') as handle:
             pickle.dump(all_dict, handle)
 
@@ -281,4 +282,6 @@ class DunderBotEnv(gym.Env):
             self.viewer = ActionDistribution(self.trades)
             self.viewer.render()
 
-            
+            # Render reward output
+            self.viewer = RewardDevelopment(self.rewards)
+            self.viewer.render()
