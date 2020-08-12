@@ -5,9 +5,7 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
-from .reward_schema import RewardSchema
-from src.env.render.TradingChartStatic import TradingChartStatic
-from src.env.render.ActionDistribution import ActionDistribution
+from src.env.render import TradingChartStatic, ActionDistribution
 from src.env.trade.TradeStrategy import TradeStrategy
 from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns #, BaseRewardStrategy
 
@@ -185,60 +183,6 @@ class DunderBotEnv(gym.Env):
         }, ignore_index=True)
 
 
-
-        ## OLD STARTS HERE
-        # if trade == 'buy':  # Buy
-        #     total_possible = self.balance / self.current_price
-        #     asset_bought = total_possible * ratio
-           
-        #     prev_cost = self.cost_basis * self.asset_held
-        #     additional_cost = asset_bought * self.current_price
-
-        #     self.balance -= additional_cost
-        #     self.cost_basis = (
-        #         prev_cost + additional_cost) / (self.asset_held + asset_bought)
-
-        #     # Save the trade for rendering
-        #     self.trades.append({'step': self.current_step,
-        #                         'amount': asset_bought,
-        #                         'total': additional_cost,
-        #                         'type': trade,
-        #                         'action_ratio': ratio})
-
-        # elif trade == 'sell':  # Sell
-        #     asset_sold = self.asset_held * ratio
-
-        #     self.balance += asset_sold * self.current_price
-        #     self.asset_held -= asset_sold
-        #     self.total_asset_sold += asset_sold
-        #     self.total_sales_value += asset_sold * self.current_price
-
-        #     # Save the trade for rendering
-        #     self.trades.append({'step': self.current_step,
-        #                         'amount': asset_sold,
-        #                         'total': self.total_sales_value,
-        #                         'type': trade,
-        #                         'action_ratio': ratio})
-        
-        # elif trade == 'hold':  # Hold
-        #     # Save the trade for rendering
-        #     self.trades.append({'step': self.current_step,
-        #                         'amount': None,
-        #                         'total': None,
-        #                         'type': trade,
-        #                         'action_ratio': None})
-
-        # # Handle net worth variants
-        # self.net_worth = self.balance + self.asset_held * self.current_price
-        # self.net_worths.append(self.net_worth)
-        # if self.net_worth > self.max_net_worth:
-        #     self.max_net_worth = self.net_worth
-        
-        # self.asset_held_hist.append(self.asset_held)
-        # if self.asset_held == 0:
-        #     self.cost_basis = 0
-
-
     def _reward(self):
         reward = self.reward_strategy.get_reward(net_worths=self.net_worths)
 
@@ -259,14 +203,6 @@ class DunderBotEnv(gym.Env):
         return float(rewards[-1])
 
 
-    def _get_reward(self):
-
-        Reward = RewardSchema(balance=self.balance, 
-                                current_step=self.current_step, 
-                                MAX_STEPS=MAX_STEPS)
-        return Reward.get_reward_strategy()
-
-
     def step(self, action):
         # Execute one time step within the environment
         self._take_action(action)
@@ -277,7 +213,6 @@ class DunderBotEnv(gym.Env):
         if self.current_step > self.df.index.max():
             self.current_step = self.data_n_indexsteps
 
-        #reward = self._get_reward()
         reward = self._reward()
         
         # DoD: if we don't have any money, we can't trade
