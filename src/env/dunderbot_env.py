@@ -9,7 +9,7 @@ from .reward_schema import RewardSchema
 from src.env.render.TradingChartStatic import TradingChartStatic
 from src.env.render.ActionDistribution import ActionDistribution
 from src.env.trade.TradeStrategy import TradeStrategy
-from src.env.rewards import BaseRewardStrategy, IncrementalNetWorth, RiskAdjustedReturns
+from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns #, BaseRewardStrategy
 
 from src.util.config import get_config
 config = get_config()

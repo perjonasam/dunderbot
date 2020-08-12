@@ -1,7 +1,6 @@
 import pandas as pd
-from src.env.rewards.BaseRewardStrategy import BaseRewardStrategy
 
-class IncrementalNetWorth(BaseRewardStrategy):
+class IncrementalNetWorth():
     """A simple reward scheme that rewards the agent for incremental increases in net worth."""
 
     def __init__(self, window_size = 1):
@@ -13,7 +12,7 @@ class IncrementalNetWorth(BaseRewardStrategy):
     def get_reward(self, net_worths: list) -> float:
         """Rewards the agent for incremental increases in net worth over a sliding window.
         Args:
-            portfolio: The portfolio being used by the environment.
+            net_worth: history of net_worth
         Returns:
             The cumulative percentage change in net worth over the previous `window_size` timesteps.
         """

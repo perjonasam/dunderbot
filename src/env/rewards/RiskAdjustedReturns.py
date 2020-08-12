@@ -2,10 +2,9 @@ import pandas as pd
 import numpy as np
 
 from typing import Callable
-from src.env.rewards.BaseRewardStrategy import BaseRewardStrategy
 
 
-class RiskAdjustedReturns(BaseRewardStrategy):
+class RiskAdjustedReturns():
     """A reward scheme that rewards the agent for increasing its net worth, while penalizing more volatile strategies.
     """
 
