@@ -216,7 +216,7 @@ class DunderBotEnv(gym.Env):
         
         # DoD: if we don't have any money, we can't trade
         # TODO: add time series has run out in DoD (see RLTrader for example)?
-        done = self.net_worth <= 0
+        done = self.net_worths[-1] <= 0
 
         # Next observation
         obs = self._next_observation()
@@ -225,21 +225,20 @@ class DunderBotEnv(gym.Env):
 
 
     def reset(self):
-        # Reset the state of the environment to an initial state
-        self.balance = INITIAL_ACCOUNT_BALANCE
-        self.net_worth = INITIAL_ACCOUNT_BALANCE
-        self.max_net_worth = INITIAL_ACCOUNT_BALANCE
-        self.asset_held = 0
-        self.cost_basis = 0
-        self.total_sales_value = 0
-        self.trades = []
+        """ 
+        Reset the state of the environment to an initial state 
+        """
         
-        # NOTE: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
-        self.rewards = [0]
+        self.balance = INITIAL_ACCOUNT_BALANCE
+        self.asset_held = 0
+        self.trades = []
 
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
         self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps)
         self.asset_held_hist = [0.0] * (self.data_n_indexsteps)
+
+        # TODO: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
+        self.rewards = [0]
 
         # Set the starting step to first useable value
         self.current_step = self.data_n_indexsteps
