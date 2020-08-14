@@ -23,7 +23,7 @@ class DunderBotEnv(gym.Env):
     metadata = {'render.modes': ['human', 'system', 'none']}
     viewer = None
 
-    def __init__(self, df, **kwargs):
+    def __init__(self, df, train_test):
         super(DunderBotEnv, self).__init__()
 
         self.df = df
@@ -63,6 +63,12 @@ class DunderBotEnv(gym.Env):
         #TODO: move this choice to config somehow
         self.reward_strategy = IncrementalNetWorth()
 
+        # Set train_test strategy. NOTE: this only applies to prediction. Training will always use train.
+        # This helps keep time slices of training and prediction separate
+        assert train_test in ['train', 'test'], f'Train_test can only be train or test.'
+        self.train_test = train_test
+        # TODO: calculate this from some setting in config
+        self.breaking_point_timestep = 20000
 
 
     def _next_observation(self):
@@ -240,8 +246,15 @@ class DunderBotEnv(gym.Env):
         # TODO: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
         self.rewards = [0]
 
-        # Set the starting step to first useable value
-        self.current_step = self.data_n_indexsteps
+        # Set the starting step depending on time series start or 
+        if self.train_test == 'train':
+            self.reset_step = self.data_n_indexsteps
+            print('TRAIN')
+        elif self.train_test == 'test':
+            self.reset_step = self.breaking_point_timestep
+            print('TEST')
+        self.current_step = self.reset_step
+
 
         self.account_history = pd.DataFrame([{
             'balance': self.balance,
@@ -273,7 +286,8 @@ class DunderBotEnv(gym.Env):
         elif mode == 'human':
             # Render static TradingChart
             self.viewer = TradingChartStatic(self.df)
-            self.viewer.render(self.current_step,
+            self.viewer.render(self.reset_step,
+                            self.current_step,
                             self.net_worths,
                             self.trades,
                             self.account_history)

@@ -6,14 +6,16 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
 
 import pandas as pd
-from src.env.dunderbot_env import DunderBotEnv
+from src.env.DunderBotEnv import DunderBotEnv
 
 from src.util.config import get_config
 config = get_config()
 
 def preprocess(*, df):
     # The algorithms require a vectorized environment to run
-    env = DummyVecEnv([lambda: DunderBotEnv(df)])
+    env = DunderBotEnv(df=df, train_test='train')
+    #env = TrainTestWrapper(env, max_steps=100, train_test='train')
+    env = DummyVecEnv([lambda: env])
     return env
 
 
@@ -23,7 +25,10 @@ def train(*, env, total_timesteps=20000):
     return model
 
 
-def predict(*, env, model, total_timesteps=2000, rendermode='human'):
+def predict(*, df, model, total_timesteps=2000, rendermode='human'):
+    # Same env as above, but with potentially different train_test setting
+    env = DunderBotEnv(df=df, train_test='test')
+    env = DummyVecEnv([lambda: env])
     obs = env.reset()
     for _ in range(total_timesteps):
         action, _states = model.predict(obs)

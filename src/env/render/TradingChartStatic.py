@@ -25,7 +25,7 @@ class TradingChartStatic:
         self.df = df
 
 
-    def _render_net_worth(self, step_range, times, current_step, net_worths):
+    def _render_net_worth(self, step_range, times, net_worths):
         # Clear the frame rendered last step
         #self.net_worth_ax.clear()
         self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=1, colspan=1)
@@ -51,7 +51,7 @@ class TradingChartStatic:
                                    label=benchmark['label'], color=colors[i % len(colors)], alpha=0.3)
 
 
-    def _render_assets_held(self, step_range, times, current_step, assets_held_hist):
+    def _render_assets_held(self, step_range, times, assets_held_hist):
         self.assets_ax = plt.subplot2grid((6, 1), (1, 0), rowspan=1, colspan=1, sharex=self.net_worth_ax)
 
         # Plot assetprice
@@ -66,7 +66,7 @@ class TradingChartStatic:
         legend.get_frame().set_alpha(0.4)
 
 
-    def _render_price(self, step_range, times, current_step):
+    def _render_price(self, step_range, times):
         #self.price_ax.clear()
         self.price_ax = plt.subplot2grid((6, 1), (2, 0), rowspan=4, colspan=1, sharex=self.net_worth_ax)
 
@@ -123,12 +123,12 @@ class TradingChartStatic:
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
 
-    def render(self, current_step, net_worths, trades, account_history, figwidth=15):
+    def render(self, start_step, end_step, net_worths, trades, account_history, figwidth=15):
         assets_held_hist = account_history['asset_held']
-        #window_start = max(current_step - window_size, 0)
-        step_range = slice(0, current_step)
+        step_range = slice(start_step, end_step)
+        print(start_step, end_step)
         times = self.df['Timestamp'].values[step_range]
-
+        print(times)
         self.data_n_timesteps = int(config.data_n_timesteps)
 
         # Create a figure on screen and set the title
@@ -138,9 +138,9 @@ class TradingChartStatic:
         plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.95, wspace=0.2, hspace=0.05)
         
         # Render subplots which share x-axis (price)
-        self._render_net_worth(step_range, times, current_step, net_worths)
-        self._render_assets_held(step_range, times, current_step, assets_held_hist)
-        self._render_price(step_range, times, current_step)
+        self._render_net_worth(step_range, times, net_worths)
+        self._render_assets_held(step_range, times, assets_held_hist)
+        self._render_price(step_range, times)
         self._render_volume(step_range, times)
         self._render_title(net_worths)
 
