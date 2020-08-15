@@ -240,8 +240,8 @@ class DunderBotEnv(gym.Env):
         self.trades = []
 
         # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
-        self.net_worths = [INITIAL_ACCOUNT_BALANCE] * (self.data_n_indexsteps)
-        self.asset_held_hist = [0.0] * (self.data_n_indexsteps)
+        self.net_worths = [INITIAL_ACCOUNT_BALANCE]
+        self.asset_held_hist = [0.0]
 
         # TODO: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
         self.rewards = [0]
@@ -263,7 +263,7 @@ class DunderBotEnv(gym.Env):
             'purchase_cost': 0,
             'asset_sold': 0,
             'sale_revenue': 0,
-        }]  * (self.data_n_indexsteps))
+        }] )
 
         return self._next_observation()
 
@@ -285,10 +285,10 @@ class DunderBotEnv(gym.Env):
 
         elif mode == 'human':
             # Render static TradingChart
-            self.viewer = TradingChartStatic(self.df)
-            self.viewer.render(self.reset_step,
-                            self.current_step,
-                            self.net_worths,
+            self.viewer = TradingChartStatic(self.df, 
+                                            self.reset_step, 
+                                            self.current_step)
+            self.viewer.render(self.net_worths,
                             self.trades,
                             self.account_history)
 

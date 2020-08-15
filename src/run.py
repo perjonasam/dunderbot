@@ -25,12 +25,12 @@ def train(*, env, total_timesteps=20000):
     return model
 
 
-def predict(*, df, model, total_timesteps=2000, rendermode='human'):
+def predict(*, df, model, timesteps, train_test, rendermode='human'):
     # Same env as above, but with potentially different train_test setting
-    env = DunderBotEnv(df=df, train_test='test')
+    env = DunderBotEnv(df=df, train_test=train_test)
     env = DummyVecEnv([lambda: env])
     obs = env.reset()
-    for _ in range(total_timesteps):
+    for _ in range(timesteps):
         action, _states = model.predict(obs)
         obs, rewards, done, info = env.step(action)
             
