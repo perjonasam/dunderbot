@@ -6,6 +6,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
 
 import pandas as pd
+import gym
 from src.env.DunderBotEnv import DunderBotEnv
 
 from src.util.config import get_config
@@ -19,19 +20,24 @@ def preprocess(*, df):
     return env
 
 
-def train(*, env, timesteps=20000):
+def train(*, env, timesteps):
     model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1)
     model.learn(total_timesteps=timesteps, log_interval=10)
     return model
 
 
 def predict(*, df, model, timesteps, rendermode='human'):
-    # Same env as above, but with potentially different train_test setting
+    # Same env as above, but with different train_test setting
     env = DunderBotEnv(df=df, train_test='test')
     env = DummyVecEnv([lambda: env])
     obs = env.reset()
-    for _ in range(timesteps):
+    
+    done = False
+    for i in range(timesteps):
         action, _states = model.predict(obs)
         obs, rewards, done, info = env.step(action)
-            
+        if done:
+            print(f'Env done, loop {i+1}')
+            break
+    
     env.render(mode=rendermode)

@@ -14,8 +14,8 @@ input_data:
   tempres: '1h'
 
 train_test:
-  test_timesteps: 6000
-  test_ratio: 0.3
+  test_timesteps: 5000
+  test_ratio: 0.3  # Not yet implemented
 
 monitoring:
   tensorboard:

@@ -3,6 +3,8 @@
 * Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow link)
 * For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and subsequently `http://127.0.0.1:6006` in browser
 
+# Stuff and gotchas
+* While the train-test framework is setup like you want to choose train sometimes for prediction or test for training, you don't. You _always_ want to do train for training and test for prediction. It's the only way not to double dip and skrew up any results.
 
 # Resources
 ## RL concepts/intros

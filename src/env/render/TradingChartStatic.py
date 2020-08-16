@@ -26,6 +26,8 @@ class TradingChartStatic:
         self.start_step = start_step
         self.end_step = end_step
         self.step_range = slice(start_step, end_step)
+        print(self.start_step, self.end_step)
+
 
     def _render_net_worth(self, times, net_worths):
         # Clear the frame rendered last step

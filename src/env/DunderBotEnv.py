@@ -68,7 +68,6 @@ class DunderBotEnv(gym.Env):
         self.train_test = train_test
         # Calculate train/test breaking point from some setting in config
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_test.test_timesteps)
-        print(self.traintest_breaking_point_timestep, int(config.train_test.test_timesteps), df.index.max())
         # TODO: implement train test ratio selection here
 
 
@@ -81,7 +80,7 @@ class DunderBotEnv(gym.Env):
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'VolumeUSD'].values / MAX_NUM_ASSET,
         ]])
-        
+
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
         obs = np.append(obs, [[
@@ -214,15 +213,21 @@ class DunderBotEnv(gym.Env):
 
         self.current_step += 1
 
-        # Start over again when data is out
-        if self.current_step > self.df.index.max():
-            self.current_step = self.data_n_indexsteps
-
+        # Start over again when data is out for the train case (test case will set done to True when data is out)
+        # TODO: consider ending the episode for this scenario
+        if self.train_test == 'train' and self.current_step >= self.traintest_breaking_point_timestep:
+            print(f'Resetting current step to start_step ({self.start_step}) in train env')
+            self.current_step = self.start_step
+        
         reward = self._reward()
         
-        # DoD: if we don't have any money, we can't trade
-        # TODO: add time series has run out in DoD (see RLTrader for example)?
+        # DoD1: if we don't have any money, we can't trade
         done = self.net_worths[-1] <= 0
+        # DoD2: When data is out for the test case, halt.
+        if self.train_test == 'test':
+            done = self.current_step >= self.df.index.max()
+        if done:
+            print(f'Env calls done')
 
         # Next observation
         obs = self._next_observation()
@@ -256,7 +261,7 @@ class DunderBotEnv(gym.Env):
             self.start_step = self.data_n_indexsteps
             self.end_step = self.traintest_breaking_point_timestep
         elif self.train_test == 'test':
-            self.start_step = self.traintest_breaking_point_timestep + self.data_n_indexsteps
+            self.start_step = self.traintest_breaking_point_timestep + self.data_n_timesteps
             self.end_step = self.df.index.max()
         self.current_step = self.start_step
         print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
@@ -281,9 +286,11 @@ class DunderBotEnv(gym.Env):
 
         elif mode == 'human':
             # Render static TradingChart
+            print(f'Rendering TradingChartStatic for index steps {self.start_step} through {self.current_step}')
             self.viewer = TradingChartStatic(self.df, 
                                             self.start_step, 
                                             self.current_step)
+            
             self.viewer.render(self.net_worths,
                             self.trades,
                             self.account_history)
