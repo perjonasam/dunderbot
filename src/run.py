@@ -19,15 +19,15 @@ def preprocess(*, df):
     return env
 
 
-def train(*, env, total_timesteps=20000):
+def train(*, env, timesteps=20000):
     model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1)
-    model.learn(total_timesteps=total_timesteps, log_interval=10)
+    model.learn(total_timesteps=timesteps, log_interval=10)
     return model
 
 
-def predict(*, df, model, timesteps, train_test, rendermode='human'):
+def predict(*, df, model, timesteps, rendermode='human'):
     # Same env as above, but with potentially different train_test setting
-    env = DunderBotEnv(df=df, train_test=train_test)
+    env = DunderBotEnv(df=df, train_test='test')
     env = DummyVecEnv([lambda: env])
     obs = env.reset()
     for _ in range(timesteps):

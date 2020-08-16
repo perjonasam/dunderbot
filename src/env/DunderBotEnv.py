@@ -64,11 +64,12 @@ class DunderBotEnv(gym.Env):
         self.reward_strategy = IncrementalNetWorth()
 
         # Set train_test strategy. NOTE: this only applies to prediction. Training will always use train.
-        # This helps keep time slices of training and prediction separate
         assert train_test in ['train', 'test'], f'Train_test can only be train or test.'
         self.train_test = train_test
-        # TODO: calculate this from some setting in config
-        self.breaking_point_timestep = 20000
+        # Calculate train/test breaking point from some setting in config
+        self.traintest_breaking_point_timestep = df.index.max() - int(config.train_test.test_timesteps)
+        print(self.traintest_breaking_point_timestep, int(config.train_test.test_timesteps), df.index.max())
+        # TODO: implement train test ratio selection here
 
 
     def _next_observation(self):
@@ -162,8 +163,6 @@ class DunderBotEnv(gym.Env):
             self.asset_held -= asset_sold
             self.balance += sale_revenue
 
-            #self.reward_strategy.reset_reward()
-
             self.trades.append({'step': self.current_step,
                                 'amount': asset_sold,
                                 'total': sale_revenue,
@@ -195,6 +194,7 @@ class DunderBotEnv(gym.Env):
 
         self.rewards.append(reward)
 
+        # TODO: evaluate if we should stationarize_rewards/normalize_rewards.
         #if self.stationarize_rewards:
         #    rewards = difference(self.rewards, inplace=False)
         #else:
@@ -238,23 +238,9 @@ class DunderBotEnv(gym.Env):
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.asset_held = 0
         self.trades = []
-
-        # Add data_n_indexsteps dummy net_worths to retain consistency in current_step between classes (since first index of df == 0 but first index of used data point == data_n_indexsteps != 0)
         self.net_worths = [INITIAL_ACCOUNT_BALANCE]
         self.asset_held_hist = [0.0]
-
-        # TODO: Assess whether this should be padded with 0:s to retain timestep index between classes at first use
         self.rewards = [0]
-
-        # Set the starting step depending on time series start or 
-        if self.train_test == 'train':
-            self.reset_step = self.data_n_indexsteps
-            print('TRAIN')
-        elif self.train_test == 'test':
-            self.reset_step = self.breaking_point_timestep
-            print('TEST')
-        self.current_step = self.reset_step
-
 
         self.account_history = pd.DataFrame([{
             'balance': self.balance,
@@ -264,6 +250,16 @@ class DunderBotEnv(gym.Env):
             'asset_sold': 0,
             'sale_revenue': 0,
         }] )
+
+        # Train/test sets which starting and ending time steps (calculated in __init__)
+        if self.train_test == 'train':
+            self.start_step = self.data_n_indexsteps
+            self.end_step = self.traintest_breaking_point_timestep
+        elif self.train_test == 'test':
+            self.start_step = self.traintest_breaking_point_timestep + self.data_n_indexsteps
+            self.end_step = self.df.index.max()
+        self.current_step = self.start_step
+        print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
 
         return self._next_observation()
 
@@ -286,7 +282,7 @@ class DunderBotEnv(gym.Env):
         elif mode == 'human':
             # Render static TradingChart
             self.viewer = TradingChartStatic(self.df, 
-                                            self.reset_step, 
+                                            self.start_step, 
                                             self.current_step)
             self.viewer.render(self.net_worths,
                             self.trades,
