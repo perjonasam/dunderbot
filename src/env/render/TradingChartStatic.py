@@ -75,7 +75,7 @@ class TradingChartStatic:
 
     def _render_volume(self, times):
         self.volume_ax = self.price_ax.twinx()
-        volume = np.array(self.df['VolumeUSD'].loc[self.step_range])
+        volume = np.array(self.df['VolumeBTC'].loc[self.step_range])
 
         self.volume_ax.plot(mdates.date2num(times), volume,  color='blue')
         self.volume_ax.fill_between(mdates.date2num(times), volume, color='blue', alpha=0.5)

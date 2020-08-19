@@ -40,7 +40,7 @@ class DunderBotEnv(gym.Env):
         # Observations are price and volume data the last data_n_timesteps, and portfolio features
         self.obs_array_length = self.data_n_timesteps*2 + int(config.n_nonprice_features)
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(1, self.obs_array_length), dtype=np.float16)
+            low=-np.inf, high=np.inf, shape=(1, self.obs_array_length), dtype=np.float16)
 
         # Set trade strategy with some constants
         # TODO: select best values here (now using default in RLTrader)
@@ -75,22 +75,23 @@ class DunderBotEnv(gym.Env):
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
         obs = np.array([
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'Close'].values / MAX_SHARE_PRICE])
+                        , 'Close'].values])
         obs = np.append(obs, [[
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'VolumeUSD'].values / MAX_NUM_ASSET,
+                        , 'VolumeBTC'].values,
         ]])
 
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
         obs = np.append(obs, [[
-            self.balance / MAX_ACCOUNT_BALANCE,
-            self.net_worths[-1] / MAX_ACCOUNT_BALANCE,
-            self.asset_held / MAX_NUM_ASSET,
+            self.balance,
+            self.net_worths[-1],
+            self.asset_held,
         ]])
 
-        assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
-
+        #assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
+        assert not np.isnan(np.sum(obs)), f'Observation contains nan'
+        assert not np.isinf(obs).any(), f'Observation contains inf'
         assert len(obs) == self.obs_array_length, \
             f'Actual obs array is {len(obs)} long, but specified to be {self.obs_array_length}'
 
