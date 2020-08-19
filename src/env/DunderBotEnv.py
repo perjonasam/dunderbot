@@ -12,11 +12,6 @@ from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns
 from src.util.config import get_config
 config = get_config()
 
-MAX_ACCOUNT_BALANCE = 2147483647
-MAX_NUM_ASSET = 2147483647
-MAX_SHARE_PRICE = 50000
-MAX_STEPS = 20000
-
 INITIAL_ACCOUNT_BALANCE = 10000.0
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
@@ -31,7 +26,7 @@ class DunderBotEnv(gym.Env):
         self.data_n_timesteps = int(config.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
         
-        self.reward_range = (0, MAX_ACCOUNT_BALANCE)
+        self.reward_range = (0, 2147483647)
 
         # actions: buy/sell n_value_bins of different ratio of balance/assets held + hold
         self.action_n_bins = int(config.action_strategy.n_value_bins)
@@ -40,7 +35,7 @@ class DunderBotEnv(gym.Env):
         # Observations are price and volume data the last data_n_timesteps, and portfolio features
         self.obs_array_length = self.data_n_timesteps*2 + int(config.n_nonprice_features)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1, self.obs_array_length), dtype=np.float16)
+            low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
         # Set trade strategy with some constants
         # TODO: select best values here (now using default in RLTrader)
@@ -73,24 +68,20 @@ class DunderBotEnv(gym.Env):
 
     def _next_observation(self):
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
-        obs = np.array([
+        obs = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'Close'].values
+        obs = np.append(obs,
             self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'Close'].values])
-        obs = np.append(obs, [[
-            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'VolumeBTC'].values,
-        ]])
+                        , 'VolumeBTC'].values
+        )
 
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
-        obs = np.append(obs, [[
-            self.balance,
+        obs = np.append(obs, 
+            [self.balance,
             self.net_worths[-1],
-            self.asset_held,
-        ]])
-
-        if self.current_step > 40000:
-            print(obs)
+            self.asset_held]
+        )
 
         #assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
         assert not np.isnan(np.sum(obs)), f'Observation contains nan'
@@ -197,14 +188,11 @@ class DunderBotEnv(gym.Env):
 
         self.rewards.append(reward)
 
-        # TODO: evaluate if we should stationarize_rewards/normalize_rewards.
+        # TODO: evaluate if we should stationarize_rewards i addition to normalizing.
         #if self.stationarize_rewards:
         #    rewards = difference(self.rewards, inplace=False)
         #else:
         rewards = self.rewards
-
-        #if self.normalize_rewards:
-        #    mean_normalize(rewards, inplace=True)
 
         rewards = np.array(rewards).flatten()
 
@@ -232,7 +220,7 @@ class DunderBotEnv(gym.Env):
             done = self.current_step >= self.df.index.max()
         if done:
             print(f'Env calls done')
-
+        assert isinstance(done, bool), "The `done` signal must be a boolean"
         # Next observation
         obs = self._next_observation()
 
@@ -269,7 +257,7 @@ class DunderBotEnv(gym.Env):
             self.end_step = self.df.index.max()
         self.current_step = self.start_step
         print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
-
+        
         return self._next_observation()
 
 

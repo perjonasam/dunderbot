@@ -9,17 +9,17 @@ from stable_baselines.common.env_checker import check_env
 
 import numpy as np
 import pandas as pd
-import gym
 from src.env.DunderBotEnv import DunderBotEnv
 
 from src.util.config import get_config
 config = get_config()
 
+
 def preprocess(*, df):
     # The algorithms require a vectorized environment to run
     env = DunderBotEnv(df=df, train_test='train')
     # check env is designed correctly
-    #check_env(env)
+    check_env(env)
     env = DummyVecEnv([lambda: env])
     env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=20)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
@@ -40,9 +40,12 @@ def _load(*, df, train_test, save_dir):
     model = PPO2.load(save_dir + "PPO2")
     
     env = DunderBotEnv(df=df, train_test=train_test)
-    # Load the saved statistics
     env = DummyVecEnv([lambda: env])
+    # Load the saved statistics
     env = VecNormalize.load(stats_path, env)
+    env = VecCheckNan(env, raise_exception=True, check_inf=True)
+    
+    # Connect them
     model.set_env(env)
     print(f'Model connected with env')
     return env, model
