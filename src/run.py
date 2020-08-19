@@ -3,7 +3,7 @@ import datetime as dt
 import os
 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecCheckNan
 from stable_baselines import PPO2
 from stable_baselines.common.env_checker import check_env
 
@@ -21,7 +21,8 @@ def preprocess(*, df):
     # check env is designed correctly
     #check_env(env)
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=np.inf)
+    env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=20)
+    env = VecCheckNan(env, raise_exception=True, check_inf=True)
     return env
 
 
@@ -48,8 +49,8 @@ def _load(*, df, train_test, save_dir):
 
 
 def train(*, env, timesteps, save_dir="/tmp/"):
-    model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1)
-    model.learn(total_timesteps=timesteps, log_interval=10)
+    model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0)
+    model.learn(total_timesteps=timesteps, log_interval=2)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
     return model
@@ -64,15 +65,13 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
     print(f'Predicting for {timesteps} timesteps')
     obs = env.reset()
     done = False
-    obs_all=[]
     for i in range(timesteps):
         action, _states = model.predict(obs)
         obs, reward, done, info = env.step(action)
-        obs_all.append(obs)
         if done:
             print(f'Env done, loop {i+1}')
             break
     
     env.render(mode=rendermode)
-    return obs_all
+
 

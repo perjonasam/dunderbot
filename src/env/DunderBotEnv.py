@@ -89,6 +89,9 @@ class DunderBotEnv(gym.Env):
             self.asset_held,
         ]])
 
+        if self.current_step > 40000:
+            print(obs)
+
         #assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
         assert not np.isnan(np.sum(obs)), f'Observation contains nan'
         assert not np.isinf(obs).any(), f'Observation contains inf'
