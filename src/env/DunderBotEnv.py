@@ -5,6 +5,7 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
+from stable_baselines.common import set_global_seeds
 from src.env.render import TradingChartStatic, ActionDistribution, RewardDevelopment
 from src.env.trade.TradeStrategy import TradeStrategy
 from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns
@@ -25,6 +26,8 @@ class DunderBotEnv(gym.Env):
         # -1 due to inclusive slicing and 0-indexing
         self.data_n_timesteps = int(config.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
+
+        set_global_seeds(config.random_seed)
         
         self.reward_range = (0, 2147483647)
 

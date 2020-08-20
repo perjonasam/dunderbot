@@ -4,8 +4,9 @@ import os
 
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecCheckNan
-from stable_baselines import PPO2
+from stable_baselines import PPO2, A2C
 from stable_baselines.common.env_checker import check_env
+from stable_baselines.common import set_global_seeds
 
 import numpy as np
 import pandas as pd
@@ -15,14 +16,14 @@ from src.util.config import get_config
 config = get_config()
 
 
-def preprocess(*, df):
+def setup_env(*, df):
     # The algorithms require a vectorized environment to run
     env = DunderBotEnv(df=df, train_test='train')
     # check env is designed correctly, to catch some errors and bugs
     check_env(env)
 
-    env = DummyVecEnv([lambda: env])
     # Wrappers: Normalize observations and reards for more efficient learning, and check for nan and inf.
+    env = DummyVecEnv([lambda: env])
     env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=20)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
     return env
@@ -54,8 +55,8 @@ def _load(*, df, train_test, save_dir):
 
 
 def train(*, env, timesteps, save_dir="/tmp/"):
-    model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0)
-    model.learn(total_timesteps=timesteps, log_interval=2)
+    model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0, seed=config.random_seed, n_cpu_tf_sess=1)
+    model.learn(total_timesteps=timesteps, log_interval=10)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
     return model

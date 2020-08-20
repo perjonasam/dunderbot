@@ -21,4 +21,5 @@ monitoring:
   tensorboard:
     folder: 'data/monitoring/tensorboard'
 
+random_seed: 42
   
