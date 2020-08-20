@@ -18,9 +18,11 @@ config = get_config()
 def preprocess(*, df):
     # The algorithms require a vectorized environment to run
     env = DunderBotEnv(df=df, train_test='train')
-    # check env is designed correctly
+    # check env is designed correctly, to catch some errors and bugs
     check_env(env)
+
     env = DummyVecEnv([lambda: env])
+    # Wrappers: Normalize observations and reards for more efficient learning, and check for nan and inf.
     env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=20)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
     return env

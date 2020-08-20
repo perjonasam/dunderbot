@@ -213,6 +213,7 @@ class DunderBotEnv(gym.Env):
         
         reward = self._reward()
         
+        done=False
         # DoD1: if we don't have any money, we can't trade
         done = self.net_worths[-1] <= 0
         # DoD2: When data is out for the test case, halt.
@@ -220,7 +221,8 @@ class DunderBotEnv(gym.Env):
             done = self.current_step >= self.df.index.max()
         if done:
             print(f'Env calls done')
-        assert isinstance(done, bool), "The `done` signal must be a boolean"
+        done = bool(done)
+
         # Next observation
         obs = self._next_observation()
 
