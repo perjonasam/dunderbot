@@ -24,7 +24,7 @@ class DunderBotEnv(gym.Env):
 
         self.df = df
         # -1 due to inclusive slicing and 0-indexing
-        self.data_n_timesteps = int(config.data_n_timesteps)
+        self.data_n_timesteps = int(config.data_params.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
 
         set_global_seeds(config.random_seed)
@@ -36,7 +36,7 @@ class DunderBotEnv(gym.Env):
         self.action_space = spaces.Discrete(2 * self.action_n_bins + 1)
 
         # Observations are price and volume data the last data_n_timesteps, and portfolio features
-        self.obs_array_length = self.data_n_timesteps*2 + int(config.n_nonprice_features)
+        self.obs_array_length = self.data_n_timesteps*2 + int(config.data_params.n_nonprice_features)
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 

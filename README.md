@@ -1,7 +1,8 @@
 # Running the code
+* Download data from https://drive.google.com/drive/folders/1Hpy6MGCxyKmfRQA7MwlNc9xM0-ykd0-G?usp=sharing and put the files in ./data/input.
 * Run `make redo` to load docker container
-* Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow link)
-* For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and subsequently `http://127.0.0.1:6006` in browser
+* Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link)
+* For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and run `http://127.0.0.1:6006` in browser
 
 # Stuff and gotchas
 * While the train-test framework is setup like you want to choose train sometimes for prediction or test for training, you don't. You _always_ want to do train for training and test for prediction. It's the only way not to double dip and skrew up any results.

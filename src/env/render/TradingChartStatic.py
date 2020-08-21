@@ -122,7 +122,7 @@ class TradingChartStatic:
 
         times = self.df['Timestamp'].loc[self.step_range]
 
-        self.data_n_timesteps = int(config.data_n_timesteps)
+        self.data_n_timesteps = int(config.data_params.data_n_timesteps)
 
         # Create a figure on screen and set the title
         self.fig = plt.figure(figsize=(figwidth, figwidth*0.8))

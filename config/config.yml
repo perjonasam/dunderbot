@@ -4,9 +4,12 @@ reward_strategy:
 action_strategy:
     n_value_bins: 4  # bins for buy and sell each (hold has 1)
 
-data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
+data_params:
+  data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
+  n_nonprice_features: 3
 
-n_nonprice_features: 3
+policy:
+  network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'
 
 input_data:
   asset: 'BTCUSD'
@@ -22,4 +25,3 @@ monitoring:
     folder: 'data/monitoring/tensorboard'
 
 random_seed: 42
-  

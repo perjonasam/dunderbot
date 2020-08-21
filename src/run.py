@@ -55,7 +55,9 @@ def _load(*, df, train_test, save_dir):
 
 
 def train(*, env, timesteps, save_dir="/tmp/"):
-    model = PPO2(MlpPolicy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0, seed=config.random_seed, n_cpu_tf_sess=1)
+    policy = config.policy.network
+    # NOTE: set ent_coef to 0 to avoid unstable model during training. Subject to change.
+    model = PPO2(policy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0, seed=config.random_seed)
     model.learn(total_timesteps=timesteps, log_interval=10)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
