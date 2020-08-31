@@ -1077,13 +1077,25 @@ pandas = "*"
 scipy = "*"
 
 [package.dependencies.gym]
-extras = ["atari", "classic_control"]
+extras = ["classic_control", "atari"]
 version = ">=0.11"
 
 [package.extras]
 docs = ["sphinx", "sphinx-autobuild", "sphinx-rtd-theme"]
 mpi = ["mpi4py"]
 tests = ["pytest", "pytest-cov", "pytest-env", "pytest-xdist", "pytype"]
+
+[[package]]
+category = "main"
+description = "Technical Analysis Library in Python"
+name = "ta"
+optional = false
+python-versions = "*"
+version = "0.5.25"
+
+[package.dependencies]
+numpy = "*"
+pandas = "*"
 
 [[package]]
 category = "main"
@@ -1299,7 +1311,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "3b0afe1f6420320e2b20460c79868edd50663d79678d9a95ef83b090a5836c39"
+content-hash = "88edf1a20ff6e5443c686caf642a7d744d92c4b9aef8d5c56e4a372e0e2d9a33"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -2020,6 +2032,9 @@ six = [
 stable-baselines = [
     {file = "stable_baselines-2.10.0-py3-none-any.whl", hash = "sha256:0c883805e2a76d3b8d91adb36ac8b1af4d2f4248d2beb3e38cf8182cb90af88c"},
     {file = "stable_baselines-2.10.0.tar.gz", hash = "sha256:347e28a4c1bb23c907adb09ef6aafb89dffaab9e8dc0046bc890d2639ec37184"},
+]
+ta = [
+    {file = "ta-0.5.25.tar.gz", hash = "sha256:cb0cc7d52d039afa084bf32d439e00183bde47e513801a44402611b57643a0c8"},
 ]
 tensorboard = [
     {file = "tensorboard-1.15.0-py2-none-any.whl", hash = "sha256:612b789386aa1b2c4804e1961273b37f8e4dd97613f98bc90ff0402d24627f50"},
