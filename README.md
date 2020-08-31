@@ -5,7 +5,7 @@
 * For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and run `http://127.0.0.1:6006` in browser
 
 # Stuff and gotchas
-* While the train-test framework is setup like you want to choose train sometimes for prediction or test for training, you don't. You _always_ want to do train for training and test for prediction. It's the only way not to double dip and skrew up any results.
+* Timeline: To support different time granularity, the start and ending points for training and prediction are dynamic and follows the following principles. There is no overlap between training and prediction. Starting point for prediction (which is also ending point for training) is counted from the end with number of prediction timesteps subtracted. From this timestep, the starting timestep for training is caluclated by subtracting number of training timesteps. During training, when all the data has been stapped through, it resets back to the starting point and continues. For prediction, the prediction cycle exits (done=True).
 
 # Resources
 ## RL concepts/intros

@@ -19,7 +19,7 @@ class DunderBotEnv(gym.Env):
     metadata = {'render.modes': ['human', 'system', 'none']}
     viewer = None
 
-    def __init__(self, df, train_test):
+    def __init__(self, df, train_predict):
         super(DunderBotEnv, self).__init__()
 
         self.df = df
@@ -58,15 +58,15 @@ class DunderBotEnv(gym.Env):
                                              min_amount_limit=self.min_amount_limit)
 
         # Set Reward Strategy
-        #TODO: move this choice to config somehow
+        #TODO: move this choice to config
         self.reward_strategy = IncrementalNetWorth()
 
-        # Set train_test strategy. NOTE: this only applies to prediction. Training will always use train.
-        assert train_test in ['train', 'test'], f'Train_test can only be train or test.'
-        self.train_test = train_test
-        # Calculate train/test breaking point from some setting in config
-        self.traintest_breaking_point_timestep = df.index.max() - int(config.train_test.test_timesteps)
-        # TODO: implement train test ratio selection here
+        # Are we training or predicting? Decides starting timestep.
+        assert train_predict in ['train', 'predict'], f'Train_predict can only be `train` or `predict`.'
+        self.train_predict = train_predict
+
+        # Calculate train/predict breaking point from some setting in config
+        self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
 
 
     def _next_observation(self):
@@ -210,7 +210,7 @@ class DunderBotEnv(gym.Env):
 
         # Start over again when data is out for the train case (test case will set done to True when data is out)
         # TODO: consider ending the episode for this scenario
-        if self.train_test == 'train' and self.current_step >= self.traintest_breaking_point_timestep:
+        if self.train_predict == 'train' and self.current_step >= self.traintest_breaking_point_timestep:
             print(f'Resetting current step to start_step ({self.start_step}) in train env')
             self.current_step = self.start_step
         
@@ -220,7 +220,7 @@ class DunderBotEnv(gym.Env):
         # DoD1: if we don't have any money, we can't trade
         done = self.net_worths[-1] <= 0
         # DoD2: When data is out for the test case, halt.
-        if self.train_test == 'test':
+        if self.train_predict == 'predict':
             done = self.current_step >= self.df.index.max()
         if done:
             print(f'Env calls done')
@@ -253,11 +253,15 @@ class DunderBotEnv(gym.Env):
             'sale_revenue': 0,
         }] )
 
-        # Train/test sets which starting and ending time steps (calculated in __init__)
-        if self.train_test == 'train':
-            self.start_step = self.data_n_indexsteps
+        # Train/test sets which starting and ending time steps (some calculation in __init__)
+        self.train_timesteps = int(config.train_predict.train_timesteps)
+        if self.train_predict == 'train':
+            # Starting step cannot be smaller than set by data avilability
+            calculated_min = self.traintest_breaking_point_timestep - self.train_timesteps
+            data_min = self.data_n_timesteps
+            self.start_step = max(calculated_min, data_min)
             self.end_step = self.traintest_breaking_point_timestep
-        elif self.train_test == 'test':
+        elif self.train_predict == 'predict':
             self.start_step = self.traintest_breaking_point_timestep + self.data_n_timesteps
             self.end_step = self.df.index.max()
         self.current_step = self.start_step

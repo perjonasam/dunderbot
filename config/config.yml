@@ -1,8 +1,5 @@
-reward_strategy:
-  cumulative_reward: True
-
 action_strategy:
-    n_value_bins: 4  # bins for buy and sell each (hold has 1)
+    n_value_bins: 4  # amount bins for buy and sell each (hold has 1)
 
 data_params:
   data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
@@ -14,11 +11,11 @@ policy:
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
-  tempres: '1h'
+  tempres: '1m'
 
-train_test:
-  test_timesteps: 5000
-  test_ratio: 0.3  # Not yet implemented
+train_predict:
+  train_timesteps: 30000  # These will set the starting timesteps in reset
+  predict_timesteps: 5000  # These will set the starting timesteps in reset
 
 monitoring:
   tensorboard:

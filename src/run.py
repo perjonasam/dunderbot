@@ -18,7 +18,7 @@ config = get_config()
 
 def setup_env(*, df):
     # The algorithms require a vectorized environment to run
-    env = DunderBotEnv(df=df, train_test='train')
+    env = DunderBotEnv(df=df, train_predict='train')
     # check env is designed correctly, to catch some errors and bugs
     check_env(env)
 
@@ -36,19 +36,19 @@ def _save(*, env, model, save_dir):
     env.save(stats_path)
 
 
-def _load(*, df, train_test, save_dir):
+def _load(*, df, train_predict, save_dir):
     print(f'Loading files from {save_dir}')
     stats_path = os.path.join(save_dir, "vec_normalize.pkl")
     # Load the agent
     model = PPO2.load(save_dir + "PPO2")
     
-    env = DunderBotEnv(df=df, train_test=train_test)
+    env = DunderBotEnv(df=df, train_predict=train_predict)
     env = DummyVecEnv([lambda: env])
-    # Load the saved statistics
+    # Load the saved statistics from normalization
     env = VecNormalize.load(stats_path, env)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
     
-    # Connect them
+    # Connect the environment with the model
     model.set_env(env)
     print(f'Model connected with env')
     return env, model
@@ -56,7 +56,7 @@ def _load(*, df, train_test, save_dir):
 
 def train(*, env, timesteps, save_dir="/tmp/"):
     policy = config.policy.network
-    # NOTE: set ent_coef to 0 to avoid unstable model during training. Subject to change.
+    # NOTE: setting ent_coef to 0 to avoid unstable model during training. Subject to change.
     model = PPO2(policy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0, seed=config.random_seed)
     model.learn(total_timesteps=timesteps, log_interval=10)
     # Save model and env
@@ -66,7 +66,7 @@ def train(*, env, timesteps, save_dir="/tmp/"):
 
 def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
     # Load model anf env stats from file
-    env, model = _load(df=df, train_test='test', save_dir=save_dir)
+    env, model = _load(df=df, train_predict='predict', save_dir=save_dir)
     env.training = False
     env.norm_reward = False
     
