@@ -258,8 +258,7 @@ class DunderBotEnv(gym.Env):
         if self.train_predict == 'train':
             # Starting step cannot be smaller than set by data avilability
             calculated_min = self.traintest_breaking_point_timestep - self.train_timesteps
-            data_min = self.data_n_timesteps
-            self.start_step = max(calculated_min, data_min)
+            self.start_step = max(calculated_min, self.df.index.min())
             self.end_step = self.traintest_breaking_point_timestep
         elif self.train_predict == 'predict':
             self.start_step = self.traintest_breaking_point_timestep + self.data_n_timesteps

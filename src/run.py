@@ -30,14 +30,14 @@ def setup_env(*, df):
 
 
 def _save(*, env, model, save_dir):
-    print(f'Saving files to {save_dir}')
+    print(f'RUN: Saving files to {save_dir}')
     model.save(save_dir + "PPO2")
     stats_path = os.path.join(save_dir, "vec_normalize.pkl")
     env.save(stats_path)
 
 
 def _load(*, df, train_predict, save_dir):
-    print(f'Loading files from {save_dir}')
+    print(f'RUN: Loading files from {save_dir}')
     stats_path = os.path.join(save_dir, "vec_normalize.pkl")
     # Load the agent
     model = PPO2.load(save_dir + "PPO2")
@@ -50,17 +50,19 @@ def _load(*, df, train_predict, save_dir):
     
     # Connect the environment with the model
     model.set_env(env)
-    print(f'Model connected with env')
+    print(f'RUN: Model connected with env')
     return env, model
 
 
 def train(*, env, timesteps, save_dir="/tmp/"):
+    print(f'RUN: Training for {timesteps} timesteps...')
     policy = config.policy.network
     # NOTE: setting ent_coef to 0 to avoid unstable model during training. Subject to change.
     model = PPO2(policy, env, tensorboard_log=config.monitoring.tensorboard.folder, verbose=1, ent_coef=0, seed=config.random_seed)
     model.learn(total_timesteps=timesteps, log_interval=10)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
+    print(f'Done.')
     return model
 
 
@@ -70,7 +72,7 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
     env.training = False
     env.norm_reward = False
     
-    print(f'Predicting for {timesteps} timesteps')
+    print(f'RUN: Predicting for {timesteps} timesteps')
     obs = env.reset()
     done = False
     for i in range(timesteps):
@@ -79,7 +81,7 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
         if done:
             print(f'Env done, loop {i+1}')
             break
-    
+    print(f'Done.')
     env.render(mode=rendermode)
 
 

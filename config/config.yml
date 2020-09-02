@@ -14,8 +14,8 @@ input_data:
   tempres: '1m'
 
 train_predict:
-  train_timesteps: 30000  # These will set the starting timesteps in reset
-  predict_timesteps: 5000  # These will set the starting timesteps in reset
+  train_timesteps: 3000  # These will set the starting timesteps in reset
+  predict_timesteps: 500  # These will set the starting timesteps in reset
 
 monitoring:
   tensorboard:

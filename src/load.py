@@ -1,4 +1,5 @@
 import pandas as pd
+import ta
 from src.util.config import get_config
 
 config = get_config()
@@ -11,12 +12,10 @@ def load_OHLC_data():
     data_folder = 'data/input'
     filepath = f'{data_folder}/{config.input_data.source}_{config.input_data.asset}_{config.input_data.tempres}.pickle'
     df = pd.read_pickle(filepath)
-    
-    # Dropping time buckets with no trading. Retaining index as we depend on it being incremental integer.
-    print(f'Dropping {df["Open"].isna().sum()} NaNs out of {len(df)} samples ({round(df["Open"].isna().sum()/len(df)*100, 2)}%) from input file')
-    df = df.dropna(how='any').reset_index(drop=False)
-    
+    print(f'LOAD: Loading data with {len(df)} samples')
     return df
+
+
 
 
 # def manual_prep_raw_data():
