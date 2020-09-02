@@ -26,55 +26,57 @@ def add_technical_features(df):
     """
     Adding a couple of handpicked, very commonly utilized TIs for BTC. 
     More info on each indicator: https://technical-analysis-library-in-python.readthedocs.io/en/latest
-    
-    TODO: move some recurring settings to config
+    NOTE: column names must be prefixed with `ti_`, since that is used to define obs space in env.
+
+    TODO: move some recurring settings to config, like n.
     """
     print(f'PREPROCESS: Adding technical features...')
     orig_len = len(df)
     
     # Add Bollinger Bands features
     BB = ta.volatility.BollingerBands(close=df['Close'], n=20, ndev=2, fillna=False)
-    df['bb_hind'] = BB.bollinger_hband_indicator()
-    df['bb_lind'] = BB.bollinger_lband_indicator()
-    df['bb_pband'] = BB.bollinger_pband()
-    df['bb_wband'] = BB.bollinger_wband()
+    df['ti_bb_hind'] = BB.bollinger_hband_indicator()
+    df['ti_bb_lind'] = BB.bollinger_lband_indicator()
+    df['ti_bb_pband'] = BB.bollinger_pband()
+    df['ti_bb_wband'] = BB.bollinger_wband()
 
     # Ichimoku
     II = ta.trend.IchimokuIndicator(high=df['High'], low=df['Low'], n1=9, n2=26, n3=52, visual=False, fillna=False)
-    df['ii_senkou_a'] = II.ichimoku_a()
-    df['ii_senkou_b'] = II.ichimoku_b()
-    df['ii_kijun_sen'] = II.ichimoku_base_line()
+    df['ti_ii_senkou_a'] = II.ichimoku_a()
+    df['ti_ii_senkou_b'] = II.ichimoku_b()
+    df['ti_ii_kijun_sen'] = II.ichimoku_base_line()
 
     # Relative Strength Index (RSI)
     # TODO: consider adding binary features for above 70 and below 30 (i.e. standard interpretation)
     RSI = ta.momentum.RSIIndicator(close=df['Close'], n=14, fillna=False)
-    df['rsi'] = RSI.rsi()
+    df['ti_rsi'] = RSI.rsi()
 
     # Moving Average Convergence Divergence (MACD)
     MACD = ta.trend.MACD(close=df['Close'], n_slow=26, n_fast=12, n_sign=9, fillna=False)
-    df['macd_hist'] = MACD.macd_diff()
+    df['ti_macd_hist'] = MACD.macd_diff()
 
     # Parabolic Stop and Reverse (Parabolic SAR)
     PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
-    df['psar_dind'] = PSAR.psar_down_indicator()
-    df['psar_uind'] = PSAR.psar_up_indicator()
+    df['ti_psar_dind'] = PSAR.psar_down_indicator()
+    df['ti_psar_uind'] = PSAR.psar_up_indicator()
     
     # Average Directional Movement Index (ADX)
     ADX = ta.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=14, fillna=False)    
-    df['adx'] = ADX.adx()
-    df['adx_neg'] = ADX.adx_neg()
-    df['adx_pos'] = ADX.adx_pos()
+    df['ti_adx'] = ADX.adx()
+    df['ti_adx_neg'] = ADX.adx_neg()
+    df['ti_adx_pos'] = ADX.adx_pos()
 
     # Commodity Channel Index (CCI)
     CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
-    df['cci'] = CCI.cci()
+    df['ti_cci'] = CCI.cci()
 
     # Chaikin Money Flow (CMF)
     CMF = ta.volume.ChaikinMoneyFlowIndicator(high=df['High'], low=df['Low'], close=df['Close'], volume=df['VolumeBTC'], n=20, fillna=False)
-    df['cmf'] = CMF.chaikin_money_flow()
+    df['ti_cmf'] = CMF.chaikin_money_flow()
 
     assert orig_len == len(df), f'Length of df has changed when adding TI features, from {orig_len} to {len(df)}.'
     print('Done.')
+    
     return df
 
 

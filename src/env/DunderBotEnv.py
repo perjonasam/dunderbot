@@ -35,8 +35,11 @@ class DunderBotEnv(gym.Env):
         self.action_n_bins = int(config.action_strategy.n_value_bins)
         self.action_space = spaces.Discrete(2 * self.action_n_bins + 1)
 
-        # Observations are price and volume data the last data_n_timesteps, and portfolio features
-        self.obs_array_length = self.data_n_timesteps*2 + int(config.data_params.n_nonprice_features)
+        # Observations are price and volume data the last data_n_timesteps, portfolio features, and ti features
+        # Exploit ti_ prefix to locate ti features
+        n_ti_features = len([col for col in self.df.columns if 'ti_' in col])
+        self.obs_array_length = self.data_n_timesteps*2 + int(config.data_params.n_nonprice_features) + n_ti_features
+
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
@@ -86,7 +89,12 @@ class DunderBotEnv(gym.Env):
             self.asset_held]
         )
 
-        #assert np.logical_and(obs >= 0, obs <= 1).all(), f'Observation is ouside of range [0,1]'
+        # Technical indicator features
+        ti_cols = [col for col in self.df.columns if 'ti_' in col]
+        ti_features = self.df.loc[self.current_step, ti_cols]
+        obs = np.append(obs,
+                        ti_features)
+
         assert not np.isnan(np.sum(obs)), f'Observation contains nan'
         assert not np.isinf(obs).any(), f'Observation contains inf'
         assert len(obs) == self.obs_array_length, \
@@ -216,10 +224,10 @@ class DunderBotEnv(gym.Env):
         
         reward = self._reward()
         
-        done=False
+        done = False
         # DoD1: if we don't have any money, we can't trade
         done = self.net_worths[-1] <= 0
-        # DoD2: When data is out for the test case, halt.
+        # DoD2: When data is out during prediction, halt.
         if self.train_predict == 'predict':
             done = self.current_step >= self.df.index.max()
         if done:
@@ -253,7 +261,7 @@ class DunderBotEnv(gym.Env):
             'sale_revenue': 0,
         }] )
 
-        # Train/test sets which starting and ending time steps (some calculation in __init__)
+        # Set starting and ending time steps (some calculation in __init__)
         self.train_timesteps = int(config.train_predict.train_timesteps)
         if self.train_predict == 'train':
             # Starting step cannot be smaller than set by data avilability
@@ -263,6 +271,7 @@ class DunderBotEnv(gym.Env):
         elif self.train_predict == 'predict':
             self.start_step = self.traintest_breaking_point_timestep + self.data_n_timesteps
             self.end_step = self.df.index.max()
+        
         self.current_step = self.start_step
         print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
         
