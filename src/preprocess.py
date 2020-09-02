@@ -4,7 +4,7 @@ import ta
 from src.util.config import get_config
 config = get_config()
 
-def clean_data(df):
+def drop_nans_from_data(df):
     """
     A number of preprocessing steps we want/need to take.
     """
@@ -13,12 +13,18 @@ def clean_data(df):
     print(f'PREPROCESS: Dropping {df["Open"].isna().sum()} NaNs out of {len(df)} samples ({round(df["Open"].isna().sum()/len(df)*100, 2)}%) from input file')
     df = df.dropna(how='any').reset_index(drop=True)
 
-    # Drop everything we won't use, for more efficient data processing. Only disadvantage: slightly less flexibility when training (n timesteps).
+    return df
+
+
+def trim_df(df):
+    """
+    Drop everything we won't use, for more efficient data processing. Only disadvantage: slightly less flexibility when training (n timesteps).
+    """
     timesteps_needed = config.train_predict.train_timesteps + config.train_predict.predict_timesteps + config.data_params.data_n_timesteps
     starting_index = df.index.max() - timesteps_needed + 1
     print(f'PREPROCESS: Dropping unused data, {len(df)} -> {timesteps_needed} samples')
     df = df.loc[starting_index:]
-
+    
     return df
 
 
@@ -84,7 +90,8 @@ def preprocess_data(df):
     """
     Run all preprocessing steps
     """
-    df = clean_data(df=df)
+    df = drop_nans_from_data(df=df)
+    df = trim_df(df=df)
     df = add_technical_features(df=df)
     
     return df

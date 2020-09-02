@@ -38,7 +38,7 @@ class DunderBotEnv(gym.Env):
         # Observations are price and volume data the last data_n_timesteps, portfolio features, and ti features
         # Exploit ti_ prefix to locate ti features
         n_ti_features = len([col for col in self.df.columns if 'ti_' in col])
-        self.obs_array_length = self.data_n_timesteps*2 + int(config.data_params.n_nonprice_features) + n_ti_features
+        self.obs_array_length = self.data_n_timesteps*2 + int(config.data_params.n_portfolio_features) + n_ti_features
 
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
@@ -89,12 +89,13 @@ class DunderBotEnv(gym.Env):
             self.asset_held]
         )
 
-        # Technical indicator features
+        # Technical indicator features (supposedly pd bug: dtype becomes object, enforcing float)
         ti_cols = [col for col in self.df.columns if 'ti_' in col]
-        ti_features = self.df.loc[self.current_step, ti_cols]
+        ti_features = self.df.loc[self.current_step, ti_cols].astype(float)
         obs = np.append(obs,
                         ti_features)
 
+        # Tests
         assert not np.isnan(np.sum(obs)), f'Observation contains nan'
         assert not np.isinf(obs).any(), f'Observation contains inf'
         assert len(obs) == self.obs_array_length, \
@@ -264,9 +265,10 @@ class DunderBotEnv(gym.Env):
         # Set starting and ending time steps (some calculation in __init__)
         self.train_timesteps = int(config.train_predict.train_timesteps)
         if self.train_predict == 'train':
-            # Starting step cannot be smaller than set by data avilability
+            # Starting step cannot be smaller than set by data avilability. In addition, offset by max TI data lag 
+            # (to most easily avoid NaNs from lagging TIs). 
             calculated_min = self.traintest_breaking_point_timestep - self.train_timesteps
-            self.start_step = max(calculated_min, self.df.index.min())
+            self.start_step = max(calculated_min, self.df.index.min()) + config.data_params.ti_nan_timesteps
             self.end_step = self.traintest_breaking_point_timestep
         elif self.train_predict == 'predict':
             self.start_step = self.traintest_breaking_point_timestep + self.data_n_timesteps

@@ -81,7 +81,6 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
         if done:
             print(f'Env done, loop {i+1}')
             break
-    print(f'Done.')
     env.render(mode=rendermode)
 
 

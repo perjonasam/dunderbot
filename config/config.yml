@@ -3,7 +3,8 @@ action_strategy:
 
 data_params:
   data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
-  n_nonprice_features: 3
+  n_portfolio_features: 3
+  ti_nan_timesteps: 33  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
 policy:
   network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'
@@ -14,8 +15,8 @@ input_data:
   tempres: '1m'
 
 train_predict:
-  train_timesteps: 3000  # These will set the starting timesteps in reset
-  predict_timesteps: 500  # These will set the starting timesteps in reset
+  train_timesteps: 30000  # These will set the starting timesteps in reset
+  predict_timesteps: 5000  # These will set the starting timesteps in reset
 
 monitoring:
   tensorboard:
