@@ -158,7 +158,7 @@ class TradingChartStatic:
         if len(trades) <= 200:
             self._render_trades(trades)
         else:
-            print(f'Not rendering trades since they are too many to see ({len(trades)})')
+            print(f'Not rendering trades since they are too many to distinguish in plot ({len(trades)})')
 
         # Improve x axis annotation (use either DateFormatter or ConciseDateFormatter)
         locator = mdates.AutoDateLocator() 
