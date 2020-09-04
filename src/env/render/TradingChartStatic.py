@@ -9,6 +9,7 @@ from matplotlib import style
 from datetime import datetime
 from pandas.plotting import register_matplotlib_converters
 
+from src.env.trade.Benchmarks import buy_and_hold, rsi_divergence, sma_crossover
 from src.util.config import get_config
 config = get_config()
 
@@ -26,16 +27,31 @@ class TradingChartStatic:
         self.start_step = start_step
         self.end_step = end_step
         self.step_range = slice(start_step, end_step)
+        self.benchmarks = config.benchmarks
 
 
     def _render_net_worth(self, times, net_worths):
         # Clear the frame rendered last step
         self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=1, colspan=1)
         # Plot net worths
-        self.net_worth_ax.plot(mdates.date2num(times), net_worths.loc[self.step_range], label='Net Worth', color="g")
+        self.net_worth_ax.plot(mdates.date2num(times), net_worths.loc[self.step_range], label='dunderbot', color="g", linewidth=3)
 
-        #self._render_benchmarks(step_range, times, benchmarks)
+        #self._render_benchmarks(times, benchmarks)
         # Show legend, which uses the label we defined for the plot above
+        self.net_worth_ax.legend()
+        legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
+        legend.get_frame().set_alpha(0.4)
+
+    
+    def _render_benchmarks(self, times):
+        colors = ['black', 'red', 'green', 'purple',
+                  'magenta', 'yellow', 'cyan', 'orange']
+
+        for i, benchmark_name in enumerate(self.benchmarks.strategies):
+            benchmark_fn = eval(benchmark_name)
+            benchmark_values = benchmark_fn(self.df.loc[self.step_range].reset_index()['Close'], 10000, 0)
+            self.net_worth_ax.plot(mdates.date2num(times), benchmark_values,
+                                   label=benchmark_name, color=colors[i % len(colors)], alpha=0.5)
         self.net_worth_ax.legend()
         legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
         legend.get_frame().set_alpha(0.4)
@@ -131,13 +147,18 @@ class TradingChartStatic:
         
         # Render subplots which share x-axis (price)
         self._render_net_worth(times, net_worths)
+        if config.benchmarks.render:
+            self._render_benchmarks(times)
         self._render_assets_held(times, assets_held_hist)
         self._render_price(times)
         self._render_volume(times)
         self._render_title(net_worths)
 
-        # Render trades
-        self._render_trades(trades)
+        # Render trades, if they are not too many
+        if len(trades) <= 200:
+            self._render_trades(trades)
+        else:
+            print(f'Not rendering trades since they are too many to see ({len(trades)})')
 
         # Improve x axis annotation (use either DateFormatter or ConciseDateFormatter)
         locator = mdates.AutoDateLocator() 
