@@ -7,7 +7,7 @@ data_params:
   ti_nan_timesteps: 33  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
 policy:
-  network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'
+  network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
 input_data:
   asset: 'BTCUSD'

@@ -41,13 +41,13 @@ def _load(*, df, train_predict, save_dir):
     stats_path = os.path.join(save_dir, "vec_normalize.pkl")
     # Load the agent
     model = PPO2.load(save_dir + "PPO2")
-    
+
     env = DunderBotEnv(df=df, train_predict=train_predict)
     env = DummyVecEnv([lambda: env])
     # Load the saved statistics from normalization
     env = VecNormalize.load(stats_path, env)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
-    
+
     # Connect the environment with the model
     model.set_env(env)
     print(f'RUN: Model connected with env')
@@ -76,11 +76,10 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
     obs = env.reset()
     done = False
     for i in range(timesteps):
-        action, _states = model.predict(obs)
+        action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
         if done:
             print(f'Env done, loop {i+1}')
             break
     env.render(mode=rendermode)
-
 
