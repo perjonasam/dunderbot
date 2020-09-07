@@ -18,6 +18,7 @@
 * https://github.com/firmai/financial-machine-learning
 
 ## Exchanges and data
+* Add trades at many exchanges and pairs: http://api.bitcoincharts.com/v1/csv/
 * CCTX README.md contains a curated list of exchanges: https://github.com/ccxt/ccxt
 * Stock value API: https://www.alphavantage.co/#page-top
 * Crypto exchange, allegedly the “best”: https://www.binance.com/en
@@ -68,13 +69,9 @@
 
 # Idéer
 ## Features
-* Tekniska indikatorer (gyllene kors och sånt). (7 and 21 days moving average, exponential moving average, momentum, Bollinger bands, MACD, etc. etc.)
 * Värden med tidslagg och trender
-* datetime (beteenden förändras sannolikt över året och under dagen)
-* handelsvolymer
 * korrelerade tillgångar/priser/index/etc. (VIX)
 * fouriertransform för cykler (n olika komponenter)
-* anomalier
 
 ## Förprocessering
 * Kolla efter heteroskedasticity, multicollinearity, or serial correlation
