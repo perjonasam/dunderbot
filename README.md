@@ -2,6 +2,7 @@
 * Download data from https://drive.google.com/drive/folders/1Hpy6MGCxyKmfRQA7MwlNc9xM0-ykd0-G?usp=sharing and put the files in ./data/input.
 * Run `make redo` to load docker container
 * Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link)
+* Run the cells from top to bottom. When you change settings in config.yml, restart the notebook kernel in UI, for changes to take effect.
 * For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and run `http://127.0.0.1:6006` in browser
 
 # Stuff and gotchas

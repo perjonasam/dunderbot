@@ -47,9 +47,12 @@ class TradingChartStatic:
         colors = ['black', 'red', 'green', 'purple',
                   'magenta', 'yellow', 'cyan', 'orange']
 
+        initial_account_balance = config.trading_params.initial_account_balance
+        commission = config.trading_params.commission
         for i, benchmark_name in enumerate(self.benchmarks.strategies):
             benchmark_fn = eval(benchmark_name)
-            benchmark_values = benchmark_fn(self.df.loc[self.step_range].reset_index()['Close'], 10000, 0)
+            
+            benchmark_values = benchmark_fn(self.df.loc[self.step_range].reset_index()['Close'], initial_account_balance, commission)
             self.net_worth_ax.plot(mdates.date2num(times), benchmark_values,
                                    label=benchmark_name, color=colors[i % len(colors)], alpha=0.5)
         self.net_worth_ax.legend()
@@ -154,7 +157,7 @@ class TradingChartStatic:
         self._render_volume(times)
         self._render_title(net_worths)
 
-        # Render trades, if they are not too many
+        # Render trades, if they are not too many (when they become too hard to visually distinguish)
         if len(trades) <= 200:
             self._render_trades(trades)
         else:

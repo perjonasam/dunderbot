@@ -50,8 +50,8 @@ class DunderBotEnv(gym.Env):
         self.asset_precision = 8
         self.min_cost_limit = 1E-3
         self.min_amount_limit = 1E-3
-        self.commission_percent = 0
-        self.max_slippage_percent = 0
+        self.commission_percent = config.trading_params.commission
+        self.max_slippage_percent = config.trading_params.max_slippage
 
         self.trade_strategy = TradeStrategy(commission_percent=self.commission_percent,
                                              max_slippage_percent=self.max_slippage_percent,
@@ -246,10 +246,10 @@ class DunderBotEnv(gym.Env):
         Reset the state of the environment to an initial state 
         """
         
-        self.balance = INITIAL_ACCOUNT_BALANCE
+        self.balance = config.trading_params.initial_account_balance
         self.asset_held = 0
         self.trades = []
-        self.net_worths = [INITIAL_ACCOUNT_BALANCE]
+        self.net_worths = [config.trading_params.initial_account_balance]
         self.asset_held_hist = [0.0]
         self.rewards = [0]
 

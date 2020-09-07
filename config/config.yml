@@ -6,6 +6,11 @@ data_params:
   n_portfolio_features: 3
   ti_nan_timesteps: 33  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
+trading_params:
+  initial_account_balance: 10000  # USD
+  commission: 0  # in %
+  max_slippage: 0  # in %
+
 policy:
   network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
@@ -15,8 +20,8 @@ input_data:
   tempres: '1m'
 
 train_predict:
-  train_timesteps: 30000  # These will set the starting timesteps in reset
-  predict_timesteps: 5000  # These will set the starting timesteps in reset
+  train_timesteps: 3000  # These will set the starting timesteps in reset
+  predict_timesteps: 500  # These will set the starting timesteps in reset
 
 monitoring:
   tensorboard:
