@@ -71,7 +71,7 @@ def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
     env, model = _load(df=df, train_predict='predict', save_dir=save_dir)
     env.training = False
     env.norm_reward = False
-    
+
     print(f'RUN: Predicting for {timesteps} timesteps')
     obs = env.reset()
     done = False
