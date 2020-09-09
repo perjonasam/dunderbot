@@ -1,12 +1,14 @@
 # Running the code
-* Download data from https://drive.google.com/drive/folders/1Hpy6MGCxyKmfRQA7MwlNc9xM0-ykd0-G?usp=sharing and put the files in ./data/input.
 * Run `make redo` to load docker container
+* Specify parameters in config.yml (can be changed later as well, check gotcha)
 * Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link)
 * Run the cells from top to bottom. When you change settings in config.yml, restart the notebook kernel in UI, for changes to take effect.
 * For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and run `http://127.0.0.1:6006` in browser
 
-# Stuff and gotchas
+# Gotchas
+* Time granularity: Any time granularity down to 1 second is supported, simply by specifying in config. But note that the 1s granularity conputation handles memory and time efficiently, while anything cruder is resampled (i.e., much less memory and time efficient). So best is probably to use 1s or 1m and cruder. 1m will take a while (measured 1d to 11min), but it's only done once.
 * Timeline: To support different time granularity, the start and ending points for training and prediction are dynamic and follows the following principles. There is no overlap between training and prediction. Starting point for prediction (which is also ending point for training) is counted from the end with number of prediction timesteps subtracted. From this timestep, the starting timestep for training is caluclated by subtracting number of training timesteps. During training, when all the data has been stapped through, it resets back to the starting point and continues. For prediction, the prediction cycle exits (done=True).
+* Config is always read in memory. To reload the whole config in notebook, the kernel needs to be restarted, but specific fields in the config can be changed, e.g. config.input_data.source = 'Bitstamp'.
 
 # Resources
 ## RL concepts/intros

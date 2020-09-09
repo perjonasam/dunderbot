@@ -14,10 +14,11 @@ trading_params:
 policy:
   network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
+# Relevant gotcha in README.md
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
-  tempres: '1m'
+  tempres: '1s'  # n[s, m, h, d]
 
 train_predict:
   train_timesteps: 3000  # These will set the starting timesteps in reset

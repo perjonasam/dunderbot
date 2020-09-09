@@ -19,13 +19,14 @@ def download_data():
     Downloding data if the specified data details are not previously downloaded, and save to raw data folder
     Source: http://api.bitcoincharts.com/v1/csv/
     """
+    print(f'Downloading data...')
     oldfashion_currency = config.input_data.asset[-3:]
-    filename = f'{config.input_data.source}{oldfashion_currency}.csv.gz'
+    filename = f'{config.input_data.source.lower()}{oldfashion_currency}.csv.gz'
     url = f'http://api.bitcoincharts.com/v1/csv/{filename}'
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         open(f'data/raw/{filename}', 'wb').write(r.content)
-        print(f'{config.input_data.source}_{oldfashion_currency}.csv.gz downloaded and saved to ./data/raw')
+        print(f'{config.input_data.source}_{oldfashion_currency}.csv.gz downloaded and saved to ./data/raw\n')
     else:
         print(f'The specified data details {config.input_data.source}/{config.input_data.asset}/{config.input_data.tempres} are unavailable both locally and at bitcoincharts. Update.')
         print(f'Aborting.')
@@ -34,12 +35,12 @@ def download_data():
 
 def load_downloaded_data():
     # Unpack gz and load
+    print(f'Unpacking and loading raw data file...')
     oldfashion_currency = config.input_data.asset[-3:]
     filename = f'./data/raw/{config.input_data.source}{oldfashion_currency}.csv.gz'
-    print(filename)
     with gzip.open(filename) as f:
         df = pd.read_csv(f, header=None)
-    print(f'Raw data file loaded...')
+    print(f'Done.\n')
     return df
 
 
@@ -54,18 +55,45 @@ def prepare_raw_data(*, df):
     df = df.dropna()
 
     df.columns = ['Timestamp', 'Price', 'VolumeBTC']
-    df = df.groupby('Timestamp').agg(
-        Open=('Price', 'first'), 
-        High=('Price', 'max'), 
-        Low=('Price', 'min'), 
-        Close=('Price', 'last'),
-        VolumeBTC=('VolumeBTC', 'sum'))
 
-    # Ensuring order in data
-    df = df.sort_index()
+    # In the pandas world, minute is 'T'
+    tempres = config.input_data.tempres.lower().replace('m', 'T')
+    # Can handle 1s tempres efficiently, since raw data is 1s tempres
+    if tempres == '1s':
+        df = df.groupby('Timestamp').agg(
+            Open=('Price', 'first'),
+            High=('Price', 'max'),
+            Low=('Price', 'min'),
+            Close=('Price', 'last'),
+            VolumeBTC=('VolumeBTC', 'sum'))
+        # Ensuring order in data
+        df = df.sort_index()
 
-    df = df.reset_index(drop=False)
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='s')
+        df = df.reset_index(drop=False)
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='s')
+
+    # For tempres higher than 1s, use resample. NOTE: very memory intensive for tempres = n seconds
+    elif pd.Timedelta(tempres) > pd.Timedelta('1s'):
+        print('X1')
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='s')
+        df = df.set_index('Timestamp', append=False)
+        print('X2')
+        df = df.resample(tempres).agg({'Price': ['first', 'min', 'max', 'last'], 'VolumeBTC': 'sum'})
+        print('X3')
+        df = df.dropna(how='any')
+        print('X4')
+        df.columns = ['_'.join(col).strip() for col in df.columns.values]
+
+        df = df.rename(columns={'Price_first': 'Open',
+                        'Price_min': 'Low',
+                        'Price_max': 'High',
+                        'Price_last': 'Close',
+                        'VolumeBTC_sum': 'VolumeBTC'})
+        print('X5')
+        df = df.sort_index()
+        df = df.reset_index(drop=False)
+
+    # Add some metadata
     df['Symbol'] = config.input_data.asset
 
     print(f'Done.')
