@@ -3,7 +3,7 @@ action_strategy:
 
 data_params:
   data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
-  n_portfolio_features: 3
+  n_portfolio_features: 3  # See env for usage
   ti_nan_timesteps: 33  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
 trading_params:
@@ -14,15 +14,16 @@ trading_params:
 policy:
   network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
-# Relevant gotcha in README.md
+# Read relevant gotcha in README.md
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
-  tempres: '1s'  # n[s, m, h, d]
+  tempres: '1m'  # n[s, m, h, d]
 
 train_predict:
-  train_timesteps: 3000  # These will set the starting timesteps in reset
-  predict_timesteps: 500  # These will set the starting timesteps in reset
+  # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
+  train_timesteps: 4000  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 5000
 
 monitoring:
   tensorboard:
@@ -33,3 +34,4 @@ benchmarks:
   strategies: [buy_and_hold, rsi_divergence, sma_crossover]  # Check env.trade.Benchmarks for available benchmarks
 
 random_seed: 42
+n_cpu: 8  # cores really

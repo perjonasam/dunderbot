@@ -14,6 +14,8 @@ from src.util.config import get_config
 config = get_config()
 
 INITIAL_ACCOUNT_BALANCE = 10000.0
+
+
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
     metadata = {'render.modes': ['human', 'system', 'none']}
@@ -29,6 +31,7 @@ class DunderBotEnv(gym.Env):
 
         set_global_seeds(config.random_seed)
         
+        # TODO: explore this
         self.reward_range = (0, 2147483647)
 
         # actions: buy/sell n_value_bins of different ratio of balance/assets held + hold
@@ -61,15 +64,16 @@ class DunderBotEnv(gym.Env):
                                              min_amount_limit=self.min_amount_limit)
 
         # Set Reward Strategy
-        #TODO: move this choice to config
+        # TODO: move this choice to config
         self.reward_strategy = IncrementalNetWorth()
 
         # Are we training or predicting? Decides starting timestep.
         assert train_predict in ['train', 'predict'], f'Train_predict can only be `train` or `predict`.'
         self.train_predict = train_predict
 
-        # Calculate train/predict breaking point from some setting in config
+        # Calculate train/predict breaking point from settings in config
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
+        self.n_cpu = config.n_cpu
 
 
     def _next_observation(self):
@@ -83,7 +87,7 @@ class DunderBotEnv(gym.Env):
 
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
-        obs = np.append(obs, 
+        obs = np.append(obs,
             [self.balance,
             self.net_worths[-1],
             self.asset_held]
@@ -107,7 +111,7 @@ class DunderBotEnv(gym.Env):
     def translate_action(self, action):
         """There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
-        
+
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold."""
         # TODO: test impact of different orders of actions
         if action < self.action_n_bins:
@@ -121,9 +125,7 @@ class DunderBotEnv(gym.Env):
             action_amount = None
         return action_type, action_amount
 
-
     def _get_trade(self, action_type: str, action_amount: float):
-
         amount_asset_to_buy = 0
         amount_asset_to_sell = 0
 
@@ -135,7 +137,6 @@ class DunderBotEnv(gym.Env):
             amount_asset_to_sell = round(self.asset_held * action_amount, self.asset_precision)
         return amount_asset_to_buy, amount_asset_to_sell
 
-
     def _take_action(self, action):
         """
         There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
@@ -143,7 +144,6 @@ class DunderBotEnv(gym.Env):
         
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
         """        
-    
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
         
@@ -210,7 +210,6 @@ class DunderBotEnv(gym.Env):
 
         return float(rewards[-1])
 
-
     def step(self, action):
         # Execute one time step within the environment
         self._take_action(action)
@@ -222,9 +221,9 @@ class DunderBotEnv(gym.Env):
         if self.train_predict == 'train' and self.current_step >= self.traintest_breaking_point_timestep:
             print(f'Resetting current step to start_step ({self.start_step}) in train env')
             self.current_step = self.start_step
-        
+
         reward = self._reward()
-        
+
         done = False
         # DoD1: if we don't have any money, we can't trade
         done = self.net_worths[-1] <= 0
@@ -238,14 +237,13 @@ class DunderBotEnv(gym.Env):
         # Next observation
         obs = self._next_observation()
 
-        return obs, reward, done, {}
-
+        return obs, reward, done, {'foo': self.current_step}
 
     def reset(self):
-        """ 
-        Reset the state of the environment to an initial state 
         """
-        
+        Reset the state of the environment to an initial state
+        """
+
         self.balance = config.trading_params.initial_account_balance
         self.asset_held = 0
         self.trades = []
@@ -260,13 +258,14 @@ class DunderBotEnv(gym.Env):
             'purchase_cost': 0,
             'asset_sold': 0,
             'sale_revenue': 0,
-        }] )
+        }])
 
         # Set starting and ending time steps (some calculation in __init__)
-        self.train_timesteps = int(config.train_predict.train_timesteps)
+        # TODO: move n_steps to config
+        self.train_timesteps = int(config.train_predict.train_timesteps)//128*128  # 128 is default n_steps
         if self.train_predict == 'train':
             # Starting step cannot be smaller than set by data avilability. In addition, offset by max TI data lag 
-            # (to most easily avoid NaNs from lagging TIs). 
+            # (to most easily avoid NaNs from lagging TIs).
             calculated_min = self.traintest_breaking_point_timestep - self.train_timesteps
             self.start_step = max(calculated_min, self.df.index.min()) + config.data_params.ti_nan_timesteps
             self.end_step = self.traintest_breaking_point_timestep
@@ -279,11 +278,10 @@ class DunderBotEnv(gym.Env):
         
         return self._next_observation()
 
-
     def render(self, mode='human'):
         # Render the environment to the screen
         # TODO: when plot is good and has stabilized, rm this
-        all_dict={  'current_step': self.current_step,
+        all_dict = {'current_step': self.current_step,
                     'net_worths': self.net_worths,
                     'trades': self.trades,
                     'account_history': self.account_history,
@@ -301,7 +299,7 @@ class DunderBotEnv(gym.Env):
             self.viewer = TradingChartStatic(self.df, 
                                             self.start_step, 
                                             self.current_step)
-            
+
             self.viewer.render(self.net_worths,
                             self.trades,
                             self.account_history)
