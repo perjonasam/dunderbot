@@ -1,35 +1,44 @@
-import json
-import datetime as dt
 import os
-
-from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecCheckNan, SubprocVecEnv
-from stable_baselines import PPO2, A2C
-from stable_baselines.common.env_checker import check_env
-from stable_baselines.common import set_global_seeds
-
 import numpy as np
 import pandas as pd
+
+from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecCheckNan, SubprocVecEnv
+from stable_baselines import PPO2
+from stable_baselines.common.env_checker import check_env
+
 from src.env.DunderBotEnv import DunderBotEnv
 from src.env.callback.custom_callback import CustomCallback
 
 from src.util.config import get_config
 config = get_config()
 
+# Filter tensorflow version warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=Warning)
+import tensorflow as tf
+tf.get_logger().setLevel('INFO')
+tf.autograph.set_verbosity(0)
+import logging
+tf.get_logger().setLevel(logging.ERROR)
+
 
 def setup_env(*, df):
     print(f'Setting up environment using {config.n_cpu} cores...')
-    # The algorithms require a vectorized environment to run
     env = DunderBotEnv(df=df, train_predict='train')
     # check env is designed correctly, to catch some errors and bugs
     check_env(env)
 
-    # Wrappers: Normalize observations and reards for more efficient learning, and check for nan and inf.
+    # Wrappers: Normalize observations and rewards for more efficient learning, and check for nan and inf.
     n_cpu = config.n_cpu
     if n_cpu == 1:
         env = DummyVecEnv([lambda: env])
     elif n_cpu > 1:
-        env = SubprocVecEnv([lambda: env for i in range(n_cpu)])  # Benchmarked to be notably faster than DummyVecEnv for equal cores
+        # I benchmarked SubprocVecEnv to be notably faster than DummyVecEnv for equal cores
+        env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
+        # Give each process its own seed for robuster results
+        env.seed(seed=int(config.random_seed))
     env = VecNormalize(env, training=True, norm_obs=True, norm_reward=True, clip_obs=20)
     env = VecCheckNan(env, raise_exception=True, check_inf=True)
     print(f'Done.')
@@ -67,12 +76,13 @@ def train(*, env, serial_timesteps, save_dir="/tmp/"):
     # NOTE: setting ent_coef to 0 to avoid unstable model during training. Subject to change.
     total_timesteps = serial_timesteps * config.n_cpu
     print(f'RUN: Training for {serial_timesteps} serial timesteps and {total_timesteps} total timesteps...')
+    callback = None  # Alts: [None, CustomCallback()]
     model = PPO2(policy, env,
                 tensorboard_log=config.monitoring.tensorboard.folder,
                 verbose=1,
                 ent_coef=0,
                 seed=config.random_seed)
-    model.learn(total_timesteps=total_timesteps, log_interval=1)
+    model.learn(total_timesteps=total_timesteps, log_interval=1, callback=callback)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
     print(f'Done.')

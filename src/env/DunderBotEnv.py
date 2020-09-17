@@ -237,7 +237,7 @@ class DunderBotEnv(gym.Env):
         # Next observation
         obs = self._next_observation()
 
-        return obs, reward, done, {'foo': self.current_step}
+        return obs, reward, done, {'bar': action}
 
     def reset(self):
         """
