@@ -71,25 +71,40 @@ def _load(*, df, train_predict, save_dir):
     return env, model
 
 
-def train(*, env, serial_timesteps, save_dir="/tmp/"):
+def train(*, env, serial_timesteps=None, logging=False, save_dir="/tmp/"):
+    if serial_timesteps is None:
+        serial_timesteps = config.train_predict.train_timesteps
+
     policy = config.policy.network
     # NOTE: setting ent_coef to 0 to avoid unstable model during training. Subject to change.
     total_timesteps = serial_timesteps * config.n_cpu
     print(f'RUN: Training for {serial_timesteps} serial timesteps and {total_timesteps} total timesteps...')
     callback = None  # Alts: [None, CustomCallback()]
+    if logging:
+        tensorboard_log = config.monitoring.tensorboard.folder
+    else:
+        tensorboard_log = None
+    
     model = PPO2(policy, env,
-                tensorboard_log=config.monitoring.tensorboard.folder,
+                tensorboard_log=tensorboard_log,
                 verbose=1,
-                ent_coef=0,
+                #ent_coef=0,
                 seed=config.random_seed)
-    model.learn(total_timesteps=total_timesteps, log_interval=1, callback=callback)
+    model.learn(total_timesteps=total_timesteps, log_interval=10, callback=callback)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
     print(f'Done.')
     return model
 
 
-def predict(*, df, timesteps, save_dir="/tmp/", rendermode='human'):
+def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='human'):
+    if timesteps is None:
+        timesteps = config.train_predict.predict_timesteps - config.data_params.data_n_timesteps - 1
+    else:
+        timesteps_config = config.train_predict.predict_timesteps - config.data_params.data_n_timesteps - 1
+        assert timesteps <= timesteps_config, \
+            f'Number of predict timesteps requested larger than in config ({timesteps} > {timesteps_config})'
+
     # Load model anf env stats from file
     env, model = _load(df=df, train_predict='predict', save_dir=save_dir)
     env.training = False

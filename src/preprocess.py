@@ -22,9 +22,10 @@ def trim_df(df):
     """
     timesteps_needed = config.train_predict.train_timesteps + config.train_predict.predict_timesteps + config.data_params.data_n_timesteps
     starting_index = df.index.max() - timesteps_needed + 1
-    print(f'PREPROCESS: Dropping unused data, {len(df)} -> {timesteps_needed} samples')
+    starting_index = max(starting_index, 0)
+    print(f'PREPROCESS: Dropping unused data, {len(df)} -> {df.index.max()-starting_index+1} samples')
     df = df.loc[starting_index:]
-    
+
     return df
 
 
@@ -43,7 +44,8 @@ def add_technical_features(df):
     BB = ta.volatility.BollingerBands(close=df['Close'], n=20, ndev=2, fillna=False)
     df['ti_bb_hind'] = BB.bollinger_hband_indicator()
     df['ti_bb_lind'] = BB.bollinger_lband_indicator()
-    df['ti_bb_pband'] = BB.bollinger_pband()
+    # NOTE: too many inf/nan on 1s-data
+    #df['ti_bb_pband'] = BB.bollinger_pband()
     df['ti_bb_wband'] = BB.bollinger_wband()
 
     # Ichimoku
@@ -62,9 +64,10 @@ def add_technical_features(df):
     df['ti_macd_hist'] = MACD.macd_diff()
 
     # Parabolic Stop and Reverse (Parabolic SAR)
-    PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
-    df['ti_psar_dind'] = PSAR.psar_down_indicator()
-    df['ti_psar_uind'] = PSAR.psar_up_indicator()
+    # NOTE: removed because too slow
+    # PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
+    # df['ti_psar_dind'] = PSAR.psar_down_indicator()
+    # df['ti_psar_uind'] = PSAR.psar_up_indicator()
     
     # Average Directional Movement Index (ADX)
     ADX = ta.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=14, fillna=False)    
@@ -73,8 +76,9 @@ def add_technical_features(df):
     df['ti_adx_pos'] = ADX.adx_pos()
 
     # Commodity Channel Index (CCI)
-    CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
-    df['ti_cci'] = CCI.cci()
+    # NOTE: too many infs on 1s data
+    # CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
+    # df['ti_cci'] = CCI.cci()
 
     # Chaikin Money Flow (CMF)
     CMF = ta.volume.ChaikinMoneyFlowIndicator(high=df['High'], low=df['Low'], close=df['Close'], volume=df['VolumeBTC'], n=20, fillna=False)

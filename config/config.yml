@@ -18,12 +18,12 @@ policy:
 input_data:
   asset: 'BTCUSD'
   source: 'Coinbase'
-  tempres: '1m'  # n[s, m, h, d]
+  tempres: '1s'  # n[s, m, h, d]
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
   train_timesteps: 4000  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 5000
+  predict_timesteps: 10000
 
 monitoring:
   tensorboard:

@@ -79,32 +79,30 @@ class DunderBotEnv(gym.Env):
     def _next_observation(self):
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
         obs = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'Close'].values
-        obs = np.append(obs,
-            self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
-                        , 'VolumeBTC'].values
-        )
+                        , 'Close'].to_list()
+        temp = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
+                        , 'VolumeBTC'].to_list()
+        obs.extend(temp)
 
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
-        obs = np.append(obs,
-            [self.balance,
+        obs.extend([self.balance,
             self.net_worths[-1],
-            self.asset_held]
-        )
+            self.asset_held])
 
         # Technical indicator features (supposedly pd bug: dtype becomes object, enforcing float)
         ti_cols = [col for col in self.df.columns if 'ti_' in col]
-        ti_features = self.df.loc[self.current_step, ti_cols].astype(float)
-        obs = np.append(obs,
-                        ti_features)
+        ti_features = self.df.loc[self.current_step, ti_cols].astype(float).to_list()
+        obs.extend(ti_features)
+
+        obs = np.array(obs)
 
         # Tests
         assert not np.isnan(np.sum(obs)), f'Observation contains nan'
         assert not np.isinf(obs).any(), f'Observation contains inf'
         assert len(obs) == self.obs_array_length, \
             f'Actual obs array is {len(obs)} long, but specified to be {self.obs_array_length}'
-
+        print(obs)
         return obs
 
 
@@ -237,7 +235,7 @@ class DunderBotEnv(gym.Env):
         # Next observation
         obs = self._next_observation()
 
-        return obs, reward, done, {'bar': action}
+        return obs, reward, done, {}
 
     def reset(self):
         """
