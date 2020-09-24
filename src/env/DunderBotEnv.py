@@ -2,6 +2,7 @@ import pickle
 import random
 import json
 import gym
+from datetime import datetime
 from gym import spaces
 import pandas as pd
 import numpy as np
@@ -13,9 +14,6 @@ from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns
 from src.util.config import get_config
 config = get_config()
 
-INITIAL_ACCOUNT_BALANCE = 10000.0
-
-
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
     metadata = {'render.modes': ['human', 'system', 'none']}
@@ -24,15 +22,13 @@ class DunderBotEnv(gym.Env):
     def __init__(self, df, train_predict):
         super(DunderBotEnv, self).__init__()
 
+        self.timer = []
         self.df = df
         # -1 due to inclusive slicing and 0-indexing
         self.data_n_timesteps = int(config.data_params.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
 
         set_global_seeds(config.random_seed)
-        
-        # TODO: explore this
-        self.reward_range = (0, 2147483647)
 
         # actions: buy/sell n_value_bins of different ratio of balance/assets held + hold
         self.action_n_bins = int(config.action_strategy.n_value_bins)
@@ -65,7 +61,9 @@ class DunderBotEnv(gym.Env):
 
         # Set Reward Strategy
         # TODO: move this choice to config
-        self.reward_strategy = IncrementalNetWorth()
+        self.reward_strategy = RiskAdjustedReturns()
+        # TODO: explore this
+        self.reward_range = (0, 2147483647)
 
         # Are we training or predicting? Decides starting timestep.
         assert train_predict in ['train', 'predict'], f'Train_predict can only be `train` or `predict`.'
@@ -74,6 +72,8 @@ class DunderBotEnv(gym.Env):
         # Calculate train/predict breaking point from settings in config
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
         self.n_cpu = config.n_cpu
+
+        self.account_history = []
 
 
     def _next_observation(self):
@@ -102,7 +102,7 @@ class DunderBotEnv(gym.Env):
         assert not np.isinf(obs).any(), f'Observation contains inf'
         assert len(obs) == self.obs_array_length, \
             f'Actual obs array is {len(obs)} long, but specified to be {self.obs_array_length}'
-        print(obs)
+
         return obs
 
 
@@ -141,7 +141,7 @@ class DunderBotEnv(gym.Env):
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
         
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
-        """        
+        """
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
         
@@ -181,32 +181,35 @@ class DunderBotEnv(gym.Env):
 
         current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
         self.net_worths.append(current_net_worth)
-        self.account_history = self.account_history.append({
+        self.account_history.append(pd.DataFrame([{
             'balance': self.balance,
             'asset_held': self.asset_held,
             'asset_bought': asset_bought,
             'purchase_cost': purchase_cost,
             'asset_sold': asset_sold,
             'sale_revenue': sale_revenue,
-        }, ignore_index=True)
+        }]))
 
 
     def _reward(self):
-        reward = self.reward_strategy.get_reward(net_worths=self.net_worths)
+        # reward = self.reward_strategy.get_reward(net_worths=self.net_worths)
 
-        reward = float(reward) if np.isfinite(float(reward)) else 0
+        # reward = float(reward) if np.isfinite(float(reward)) else 0
 
-        self.rewards.append(reward)
+        # self.rewards.append(reward)
 
-        # TODO: evaluate if we should stationarize_rewards i addition to normalizing.
-        #if self.stationarize_rewards:
-        #    rewards = difference(self.rewards, inplace=False)
-        #else:
-        rewards = self.rewards
+        # # TODO: evaluate if we should stationarize_rewards i addition to normalizing.
+        # #if self.stationarize_rewards:
+        # #    rewards = difference(self.rewards, inplace=False)
+        # #else:
+        # rewards = self.rewards
 
-        rewards = np.array(rewards).flatten()
+        # rewards = np.array(rewards).flatten()
+        
+        # return float(rewards[-1])
 
-        return float(rewards[-1])
+        reward = np.random.uniform(low=-1.0, high=1.0)
+        return reward
 
     def step(self, action):
         # Execute one time step within the environment
@@ -231,10 +234,13 @@ class DunderBotEnv(gym.Env):
         if done:
             print(f'Env calls done')
         done = bool(done)
-
+        
         # Next observation
         obs = self._next_observation()
-
+        
+        # Timer for training slowdown analysis
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.timer.append(now)
         return obs, reward, done, {}
 
     def reset(self):
@@ -249,14 +255,15 @@ class DunderBotEnv(gym.Env):
         self.asset_held_hist = [0.0]
         self.rewards = [0]
 
-        self.account_history = pd.DataFrame([{
+        # list
+        self.account_history.append(pd.DataFrame([{
             'balance': self.balance,
             'asset_held': self.asset_held,
             'asset_bought': 0,
             'purchase_cost': 0,
             'asset_sold': 0,
             'sale_revenue': 0,
-        }])
+        }]))
 
         # Set starting and ending time steps (some calculation in __init__)
         # TODO: move n_steps to config
@@ -273,16 +280,17 @@ class DunderBotEnv(gym.Env):
         
         self.current_step = self.start_step
         print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
-        
+
         return self._next_observation()
 
     def render(self, mode='human'):
         # Render the environment to the screen
         # TODO: when plot is good and has stabilized, rm this
+        account_history_df = pd.concat(self.account_history)
         all_dict = {'current_step': self.current_step,
                     'net_worths': self.net_worths,
                     'trades': self.trades,
-                    'account_history': self.account_history,
+                    'account_history': account_history_df,
                     'rewards': self.rewards}
         with open('all_dict_pred.pickle', 'wb') as handle:
             pickle.dump(all_dict, handle)
@@ -300,7 +308,7 @@ class DunderBotEnv(gym.Env):
 
             self.viewer.render(self.net_worths,
                             self.trades,
-                            self.account_history)
+                            account_history_df)
 
             # Render action distribution
             self.viewer = ActionDistribution(self.trades)
