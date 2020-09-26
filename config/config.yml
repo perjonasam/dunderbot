@@ -14,6 +14,10 @@ trading_params:
 policy:
   network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
+reward:
+  strategy: RiskAdjustedReturn()
+  calculation_timesteps: 100000
+
 # Read relevant gotcha in README.md
 input_data:
   asset: 'BTCUSD'
@@ -22,7 +26,7 @@ input_data:
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 4000  # Will be downsized to even multiple of n_steps (default 128)
+  train_timesteps: 810000  # Will be downsized to even multiple of n_steps (default 128)
   predict_timesteps: 10000
 
 monitoring:
@@ -34,4 +38,4 @@ benchmarks:
   strategies: [buy_and_hold, rsi_divergence, sma_crossover]  # Check env.trade.Benchmarks for available benchmarks
 
 random_seed: 42
-n_cpu: 8  # cores really
+n_cpu: 8  # cores really, will affect memory consumed (not shared data)

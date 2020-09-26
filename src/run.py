@@ -87,10 +87,10 @@ def train(*, env, serial_timesteps=None, logging=False, save_dir="/tmp/"):
     
     model = PPO2(policy, env,
                 tensorboard_log=tensorboard_log,
-                verbose=1,
+                verbose=0,
                 #ent_coef=0,
                 seed=config.random_seed)
-    model.learn(total_timesteps=total_timesteps, log_interval=10, callback=callback)
+    model.learn(total_timesteps=total_timesteps, log_interval=1, callback=callback)
     # Save model and env
     _save(env=env, model=model, save_dir=save_dir)
     print(f'Done.')

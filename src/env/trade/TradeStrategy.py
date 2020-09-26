@@ -14,7 +14,7 @@ class TradeStrategy():
         self.commission_percent = commission_percent
         self.max_slippage_percent = max_slippage_percent
         self.base_precision = base_precision
-        self.asset_precision = asset_precision
+        # self.asset_precision = asset_precision
         self.min_cost_limit = min_cost_limit
         self.min_amount_limit = min_amount_limit
 

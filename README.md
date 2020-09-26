@@ -10,6 +10,7 @@
 * Timeline: To support different time granularity, the start and ending points for training and prediction are dynamic and follows the following principles. There is no overlap between training and prediction. Starting point for prediction (which is also ending point for training) is counted from the end with number of prediction timesteps subtracted. From this timestep, the starting timestep for training is caluclated by subtracting number of training timesteps. During training, when all the data has been stapped through, it resets back to the starting point and continues. For prediction, the prediction cycle exits (done=True).
 * Each cpu will make calculations on the same timesteps. Therefore, the number of total timesteps = numberof serial timesteps * n_cpu. Due to communication between nodes, there are fewer model parameter updates per second for more cpu:s, but the updates are larger (and more diverse due to different seeds and exploration). In total, there are more timesteps per s for more cpu. In other words, should be set to as many as can be spared.
 * Config is always read in memory. To reload the whole config in notebook, the kernel needs to be restarted, but specific fields in the config can be changed, e.g. config.input_data.source = 'Bitstamp'.
+* Good performance logger template during runtime: ```while true; do docker stats --no-stream | tee -a stats.txt; sleep 180; done```
 
 # Resources
 ## RL concepts/intros

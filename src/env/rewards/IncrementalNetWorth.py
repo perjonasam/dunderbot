@@ -1,9 +1,10 @@
 import pandas as pd
 
+
 class IncrementalNetWorth():
     """A simple reward scheme that rewards the agent for incremental increases in net worth."""
 
-    def __init__(self, window_size = 1):
+    def __init__(self, window_size=1):
         self.window_size = window_size
 
     def reset(self):

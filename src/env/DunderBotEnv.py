@@ -61,7 +61,7 @@ class DunderBotEnv(gym.Env):
 
         # Set Reward Strategy
         # TODO: move this choice to config
-        self.reward_strategy = RiskAdjustedReturns()
+        self.reward_strategy = RiskAdjustedReturns(return_algorithm='sortino')
         # TODO: explore this
         self.reward_range = (0, 2147483647)
 
@@ -73,7 +73,6 @@ class DunderBotEnv(gym.Env):
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
         self.n_cpu = config.n_cpu
 
-        self.account_history = []
 
 
     def _next_observation(self):
@@ -180,6 +179,8 @@ class DunderBotEnv(gym.Env):
                             'action_amount': None})
 
         current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
+        current_return = (current_net_worth-self.net_worths[-1])/(self.net_worths[-1]+1E-6)
+        self.returns.append(current_return)
         self.net_worths.append(current_net_worth)
         self.account_history.append(pd.DataFrame([{
             'balance': self.balance,
@@ -192,24 +193,14 @@ class DunderBotEnv(gym.Env):
 
 
     def _reward(self):
-        # reward = self.reward_strategy.get_reward(net_worths=self.net_worths)
+        reward = self.reward_strategy.get_reward(returns=self.returns)
 
-        # reward = float(reward) if np.isfinite(float(reward)) else 0
+        reward = float(reward) if np.isfinite(float(reward)) else 0
 
-        # self.rewards.append(reward)
+        self.rewards.append(reward)
 
-        # # TODO: evaluate if we should stationarize_rewards i addition to normalizing.
-        # #if self.stationarize_rewards:
-        # #    rewards = difference(self.rewards, inplace=False)
-        # #else:
-        # rewards = self.rewards
-
-        # rewards = np.array(rewards).flatten()
-        
-        # return float(rewards[-1])
-
-        reward = np.random.uniform(low=-1.0, high=1.0)
         return reward
+
 
     def step(self, action):
         # Execute one time step within the environment
@@ -254,8 +245,9 @@ class DunderBotEnv(gym.Env):
         self.net_worths = [config.trading_params.initial_account_balance]
         self.asset_held_hist = [0.0]
         self.rewards = [0]
+        self.returns = [0]
 
-        # list
+        self.account_history = []
         self.account_history.append(pd.DataFrame([{
             'balance': self.balance,
             'asset_held': self.asset_held,
