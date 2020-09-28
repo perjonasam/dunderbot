@@ -21,13 +21,13 @@ reward:
 # Read relevant gotcha in README.md
 input_data:
   asset: 'BTCUSD'
-  source: 'Coinbase'
+  source: 'Bitstamp'  # Bitstamp runs up until today
   tempres: '1s'  # n[s, m, h, d]
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 810000  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 10000
+  train_timesteps: 1000  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 1000
 
 monitoring:
   tensorboard:

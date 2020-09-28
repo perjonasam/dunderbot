@@ -74,14 +74,10 @@ def prepare_raw_data(*, df):
 
     # For tempres higher than 1s, use resample. NOTE: very memory intensive for tempres = n seconds
     elif pd.Timedelta(tempres) > pd.Timedelta('1s'):
-        print('X1')
         df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='s')
         df = df.set_index('Timestamp', append=False)
-        print('X2')
         df = df.resample(tempres).agg({'Price': ['first', 'min', 'max', 'last'], 'VolumeBTC': 'sum'})
-        print('X3')
         df = df.dropna(how='any')
-        print('X4')
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
 
         df = df.rename(columns={'Price_first': 'Open',
@@ -89,7 +85,6 @@ def prepare_raw_data(*, df):
                         'Price_max': 'High',
                         'Price_last': 'Close',
                         'VolumeBTC_sum': 'VolumeBTC'})
-        print('X5')
         df = df.sort_index()
         df = df.reset_index(drop=False)
 
@@ -106,13 +101,13 @@ def save_processed_data(df):
     print(f'Processed data file saved in .data/input/.')
 
 
-def download_and_process():
+def download_and_process(force_refresh=False):
     # check if file exists, or trigger download and processing
-    if not check_if_spec_data_exists():
-        print('Will download and process raw data, since data specified in config is not available')
+    if force_refresh or not check_if_spec_data_exists():
+        print('Will download and process raw data, since data specified in config is not available or refresh requested')
         download_data()
         df = load_downloaded_data()
         df = prepare_raw_data(df=df)
         save_processed_data(df=df)
     else:
-        print(f'Processed data avilable locsally, no downloading and raw data processing needed.')
+        print(f'Processed data avilable locally, no downloading and raw data processing needed.')
