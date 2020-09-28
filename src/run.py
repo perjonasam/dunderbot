@@ -97,7 +97,7 @@ def train(*, env, serial_timesteps=None, logging=False, save_dir="/tmp/"):
     return model
 
 
-def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='human'):
+def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='plots'):
     if timesteps is None:
         timesteps = config.train_predict.predict_timesteps - config.data_params.data_n_timesteps - 1
     else:

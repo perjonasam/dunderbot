@@ -1,6 +1,4 @@
 import pickle
-import random
-import json
 import gym
 from datetime import datetime
 from gym import spaces
@@ -9,14 +7,15 @@ import numpy as np
 from stable_baselines.common import set_global_seeds
 from src.env.render import TradingChartStatic, ActionDistribution, RewardDevelopment
 from src.env.trade.TradeStrategy import TradeStrategy
-from src.env.rewards import IncrementalNetWorth, RiskAdjustedReturns
+from src.env.rewards import RiskAdjustedReturns, IncrementalNetWorth
 
 from src.util.config import get_config
 config = get_config()
 
+
 class DunderBotEnv(gym.Env):
     """The Dunderbot class"""
-    metadata = {'render.modes': ['human', 'system', 'none']}
+    metadata = {'render.modes': ['plots', 'system', 'none']}
     viewer = None
 
     def __init__(self, df, train_predict):
@@ -60,8 +59,7 @@ class DunderBotEnv(gym.Env):
                                              min_amount_limit=self.min_amount_limit)
 
         # Set Reward Strategy
-        # TODO: move this choice to config
-        self.reward_strategy = RiskAdjustedReturns(return_algorithm='sortino')
+        self.reward_strategy = eval(config.reward.strategy)
         # TODO: explore this
         self.reward_range = (0, 2147483647)
 
@@ -72,8 +70,6 @@ class DunderBotEnv(gym.Env):
         # Calculate train/predict breaking point from settings in config
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
         self.n_cpu = config.n_cpu
-
-
 
     def _next_observation(self):
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
@@ -103,7 +99,6 @@ class DunderBotEnv(gym.Env):
             f'Actual obs array is {len(obs)} long, but specified to be {self.obs_array_length}'
 
         return obs
-
 
     def translate_action(self, action):
         """There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
@@ -140,6 +135,8 @@ class DunderBotEnv(gym.Env):
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
         
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
+
+        Saving info during prediction for rendering (similar info is logged using tensorboard for training)
         """
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
@@ -157,50 +154,54 @@ class DunderBotEnv(gym.Env):
             self.asset_held += asset_bought
             self.balance -= purchase_cost
 
-            self.trades.append({'step': self.current_step,
-                                'amount': asset_bought,
-                                'total': purchase_cost,
-                                'type': 'buy',
-                                'action_amount': action_amount})
+            if self.train_predict == 'predict':
+                self.trades.append({'step': self.current_step,
+                                    'amount': asset_bought,
+                                    'total': purchase_cost,
+                                    'type': 'buy',
+                                    'action_amount': action_amount})
         elif asset_sold:
             self.asset_held -= asset_sold
             self.balance += sale_revenue
 
-            self.trades.append({'step': self.current_step,
-                                'amount': asset_sold,
-                                'total': sale_revenue,
-                                'type': 'sell',
-                                'action_amount': action_amount})
+            if self.train_predict == 'predict':
+                self.trades.append({'step': self.current_step,
+                                    'amount': asset_sold,
+                                    'total': sale_revenue,
+                                    'type': 'sell',
+                                    'action_amount': action_amount})
         elif action_type == 'hold':
-            self.trades.append({'step': self.current_step,
-                            'amount': None,
-                            'total': None,
-                            'type': 'hold',
-                            'action_amount': None})
+            if self.train_predict == 'predict':
+                self.trades.append({'step': self.current_step,
+                                'amount': None,
+                                'total': None,
+                                'type': 'hold',
+                                'action_amount': None})
 
         current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
         current_return = (current_net_worth-self.net_worths[-1])/(self.net_worths[-1]+1E-6)
         self.returns.append(current_return)
         self.net_worths.append(current_net_worth)
-        self.account_history.append(pd.DataFrame([{
-            'balance': self.balance,
-            'asset_held': self.asset_held,
-            'asset_bought': asset_bought,
-            'purchase_cost': purchase_cost,
-            'asset_sold': asset_sold,
-            'sale_revenue': sale_revenue,
-        }]))
 
+        if self.train_predict == 'predict':
+            self.account_history.append(pd.DataFrame([{
+                'balance': self.balance,
+                'asset_held': self.asset_held,
+                'asset_bought': asset_bought,
+                'purchase_cost': purchase_cost,
+                'asset_sold': asset_sold,
+                'sale_revenue': sale_revenue,
+            }]))
 
     def _reward(self):
         reward = self.reward_strategy.get_reward(returns=self.returns)
 
         reward = float(reward) if np.isfinite(float(reward)) else 0
 
-        self.rewards.append(reward)
+        if self.train_predict == 'predict':
+            self.rewards.append(reward)
 
         return reward
-
 
     def step(self, action):
         # Execute one time step within the environment
@@ -275,10 +276,10 @@ class DunderBotEnv(gym.Env):
 
         return self._next_observation()
 
-    def render(self, mode='human'):
+    def render(self, mode='plots'):
         # Render the environment to the screen
-        # TODO: when plot is good and has stabilized, rm this
         account_history_df = pd.concat(self.account_history)
+        # TODO: when plot is good and has stabilized, rm this
         all_dict = {'current_step': self.current_step,
                     'net_worths': self.net_worths,
                     'trades': self.trades,
@@ -291,7 +292,7 @@ class DunderBotEnv(gym.Env):
             print('Price: ' + str(self.current_price))
             print('Net worth: ' + str(self.net_worths[-1]))
 
-        elif mode == 'human':
+        elif mode == 'plots':
             # Render static TradingChart
             print(f'Rendering TradingChartStatic for index steps {self.start_step} through {self.current_step}')
             self.viewer = TradingChartStatic(self.df, 

@@ -19,7 +19,7 @@ INITIAL_ACCOUNT_BALANCE = 10000.0
 
 class DebugEnv(gym.Env):
     """The Dunderbot class"""
-    metadata = {'render.modes': ['human', 'system', 'none']}
+    metadata = {'render.modes': ['plots', 'system', 'none']}
     viewer = None
 
     def __init__(self, df):
@@ -293,10 +293,10 @@ class DebugEnv(gym.Env):
         
         return self._next_observation()
 
-    def render(self, mode='human'):
-        pass
-        # # Render the environment to the screen
-        # # TODO: when plot is good and has stabilized, rm this
+    def render(self, mode='plots'):
+        # Render the environment to the screen
+        
+        # TODO: when plot is good and has stabilized, rm this
         # all_dict = {'current_step': self.current_step,
         #             'net_worths': self.net_worths,
         #             'trades': self.trades,
@@ -305,25 +305,25 @@ class DebugEnv(gym.Env):
         # with open('all_dict_pred.pickle', 'wb') as handle:
         #     pickle.dump(all_dict, handle)
 
-        # if mode == 'system':
-        #     print('Price: ' + str(self.current_price))
-        #     print('Net worth: ' + str(self.net_worths[-1]))
+        if mode == 'system':
+            print('Price: ' + str(self.current_price))
+            print('Net worth: ' + str(self.net_worths[-1]))
 
-        # elif mode == 'human':
-        #     # Render static TradingChart
-        #     print(f'Rendering TradingChartStatic for index steps {self.start_step} through {self.current_step}')
-        #     self.viewer = TradingChartStatic(self.df, 
-        #                                     self.start_step, 
-        #                                     self.current_step)
+        elif mode == 'plots':
+            # Render static TradingChart
+            print(f'Rendering TradingChartStatic for index steps {self.start_step} through {self.current_step}')
+            self.viewer = TradingChartStatic(self.df, 
+                                            self.start_step, 
+                                            self.current_step)
 
-        #     self.viewer.render(self.net_worths,
-        #                     self.trades,
-        #                     self.account_history)
+            self.viewer.render(self.net_worths,
+                            self.trades,
+                            self.account_history)
 
-        #     # Render action distribution
-        #     self.viewer = ActionDistribution(self.trades)
-        #     self.viewer.render()
+            # Render action distribution
+            self.viewer = ActionDistribution(self.trades)
+            self.viewer.render()
 
-        #     # Render reward output
-        #     self.viewer = RewardDevelopment(self.rewards)
-        #     self.viewer.render()
+            # Render reward output
+            self.viewer = RewardDevelopment(self.rewards)
+            self.viewer.render()

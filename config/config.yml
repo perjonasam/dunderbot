@@ -12,10 +12,10 @@ trading_params:
   max_slippage: 0  # in %
 
 policy:
-  network: 'MlpPolicy'  # available: 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
+  network: 'MlpPolicy'  # 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
 
 reward:
-  strategy: RiskAdjustedReturn()
+  strategy: RiskAdjustedReturns(return_algorithm='sortino')
   calculation_timesteps: 100000
 
 # Read relevant gotcha in README.md
@@ -38,4 +38,4 @@ benchmarks:
   strategies: [buy_and_hold, rsi_divergence, sma_crossover]  # Check env.trade.Benchmarks for available benchmarks
 
 random_seed: 42
-n_cpu: 8  # cores really, will affect memory consumed (not shared data)
+n_cpu: 8  # cores really. Will affect memory consumed (not shared data)
