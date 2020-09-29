@@ -18,11 +18,12 @@ class DunderBotEnv(gym.Env):
     metadata = {'render.modes': ['plots', 'system', 'none']}
     viewer = None
 
-    def __init__(self, df, train_predict):
+    def __init__(self, df, train_predict, record_time=False):
         super(DunderBotEnv, self).__init__()
 
         self.timer = []
         self.df = df
+        self.record_time = record_time
         # -1 due to inclusive slicing and 0-indexing
         self.data_n_timesteps = int(config.data_params.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
@@ -82,7 +83,7 @@ class DunderBotEnv(gym.Env):
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
         obs.extend([self.balance,
-            self.net_worths[-1],
+            self.current_net_worth,
             self.asset_held])
 
         # Technical indicator features (supposedly pd bug: dtype becomes object, enforcing float)
@@ -177,13 +178,13 @@ class DunderBotEnv(gym.Env):
                                 'total': None,
                                 'type': 'hold',
                                 'action_amount': None})
-
-        current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
-        current_return = (current_net_worth-self.net_worths[-1])/(self.net_worths[-1]+1E-6)
+        last_net_worth = self.current_net_worth
+        self.current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
+        current_return = (self.current_net_worth-last_net_worth)/(last_net_worth+1E-6)
         self.returns.append(current_return)
-        self.net_worths.append(current_net_worth)
 
         if self.train_predict == 'predict':
+            self.net_worths.append(self.current_net_worth)
             self.account_history.append(pd.DataFrame([{
                 'balance': self.balance,
                 'asset_held': self.asset_held,
@@ -219,20 +220,21 @@ class DunderBotEnv(gym.Env):
 
         done = False
         # DoD1: if we don't have any money, we can't trade
-        done = self.net_worths[-1] <= 0
+        done = self.current_net_worth <= 0
         # DoD2: When data is out during prediction, halt.
         if self.train_predict == 'predict':
             done = self.current_step >= self.df.index.max()
         if done:
             print(f'Env calls done')
         done = bool(done)
-        
+
         # Next observation
         obs = self._next_observation()
-        
+
         # Timer for training slowdown analysis
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        self.timer.append(now)
+        if self.record_time:
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            self.timer.append(now)
         return obs, reward, done, {}
 
     def reset(self):
@@ -243,6 +245,7 @@ class DunderBotEnv(gym.Env):
         self.balance = config.trading_params.initial_account_balance
         self.asset_held = 0
         self.trades = []
+        self.current_net_worth = 0
         self.net_worths = [config.trading_params.initial_account_balance]
         self.asset_held_hist = [0.0]
         self.rewards = [0]

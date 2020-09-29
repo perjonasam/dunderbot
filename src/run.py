@@ -24,9 +24,9 @@ import logging
 tf.get_logger().setLevel(logging.ERROR)
 
 
-def setup_env(*, df):
+def setup_env(*, df, record_time):
     print(f'Setting up environment using {config.n_cpu} cores...')
-    env = DunderBotEnv(df=df, train_predict='train')
+    env = DunderBotEnv(df=df, train_predict='train', record_time=True)
     # check env is designed correctly, to catch some errors and bugs
     check_env(env)
 
@@ -113,11 +113,14 @@ def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='plots'):
     print(f'RUN: Predicting for {timesteps} timesteps')
     obs = env.reset()
     done = False
+    rewards = []
     for i in range(timesteps):
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
+        rewards.append(reward)
         if done:
             print(f'Env done, loop {i+1}')
             break
     env.render(mode=rendermode)
+    return rewards
 
