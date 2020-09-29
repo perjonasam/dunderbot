@@ -1,8 +1,10 @@
+import numpy as np
 import pandas as pd
 import ta
 
 from src.util.config import get_config
 config = get_config()
+
 
 def drop_nans_from_data(df):
     """
@@ -90,6 +92,14 @@ def add_technical_features(df):
     return df
 
 
+def perform_nan_check(*, df):
+    """Make sure there are no NaNs or ±infs in data that will be used."""
+    print(f'Performing NaN/inf check on data...')
+    assert df.iloc[config.data_params.ti_nan_timesteps:].replace([np.inf, -np.inf], np.nan).isna().sum().sum() == 0, \
+        f'PREPROCESS: Found Nan/inf in data, aborting...'
+    print(f'Done.')
+
+
 def preprocess_data(df):
     """
     Run all preprocessing steps
@@ -97,5 +107,6 @@ def preprocess_data(df):
     df = drop_nans_from_data(df=df)
     df = trim_df(df=df)
     df = add_technical_features(df=df)
-    
+    perform_nan_check(df=df)
+
     return df
