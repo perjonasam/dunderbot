@@ -1,6 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
+from datetime import datetime
+from pathlib import Path
+from shutil import copyfile
 
 from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecCheckNan, SubprocVecEnv
 from stable_baselines import PPO2
@@ -45,18 +48,39 @@ def setup_env(*, df, record_time):
     return env
 
 
-def _save(*, env, model, save_dir):
+def _retrieve_save_load_dir():
+    """ Retrieving save dir for model and metadata. Everything is unique only locally.
+    Structure is folder in ./data/models where name is incremental number. 
+    Makes no checks of correct structure."""
+
+    base_dir = './data/models/'
+    dirlist = os.listdir(base_dir)
+    dirlist = [content for content in dirlist if os.path.isdir(base_dir + content)]
+    dirlist.sort()
+    highest_existing_increment = dirlist[-1] if len(dirlist) > 0 else '0'
+    save_dir = base_dir + str(int(highest_existing_increment)+1) + '/'
+    load_dir = base_dir + str(highest_existing_increment) + '/'
+    return save_dir, load_dir
+
+
+def _save(*, env, model):
+    """ Save model, but also some helpful meta data """
+    save_dir, _ = _retrieve_save_load_dir()
+    os.mkdir(save_dir)
     print(f'RUN: Saving files to {save_dir}')
-    model.save(save_dir + "PPO2")
-    stats_path = os.path.join(save_dir, "vec_normalize.pkl")
-    env.save(stats_path)
+    model.save(os.path.join(save_dir, "PPO2"))
+    env.save(os.path.join(save_dir, "vec_normalize.pkl"))
+    Path(os.path.join(save_dir, datetime.now().strftime('%Y-%m-%d_%H%M%S'))).touch()
+    copyfile('./config/config.yml', os.path.join(save_dir, 'config.yml'))
 
 
-def _load(*, df, train_predict, save_dir):
-    print(f'RUN: Loading files from {save_dir}')
-    stats_path = os.path.join(save_dir, "vec_normalize.pkl")
+def _load(*, df, train_predict, load_dir=None):
+    if load_dir is None:
+        _, load_dir = _retrieve_save_load_dir()
+    print(f'RUN: Loading files from {load_dir}')
+    stats_path = os.path.join(load_dir, "vec_normalize.pkl")
     # Load the agent
-    model = PPO2.load(save_dir + "PPO2")
+    model = PPO2.load(load_dir + "PPO2")
 
     env = DunderBotEnv(df=df, train_predict=train_predict)
     # Prediction is only done on single core
@@ -71,7 +95,7 @@ def _load(*, df, train_predict, save_dir):
     return env, model
 
 
-def train(*, env, serial_timesteps=None, logging=False, save_dir="/tmp/"):
+def train(*, env, serial_timesteps=None, logging=False):
     if serial_timesteps is None:
         serial_timesteps = config.train_predict.train_timesteps
 
@@ -88,16 +112,15 @@ def train(*, env, serial_timesteps=None, logging=False, save_dir="/tmp/"):
     model = PPO2(policy, env,
                 tensorboard_log=tensorboard_log,
                 verbose=0,
-                #ent_coef=0,
                 seed=config.random_seed)
     model.learn(total_timesteps=total_timesteps, log_interval=1, callback=callback)
     # Save model and env
-    _save(env=env, model=model, save_dir=save_dir)
+    _save(env=env, model=model)
     print(f'Done.')
     return model
 
 
-def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='plots'):
+def predict(*, df, timesteps=None, rendermode='plots', load_dir=None):
     if timesteps is None:
         timesteps = config.train_predict.predict_timesteps - config.data_params.data_n_timesteps - 1
     else:
@@ -106,21 +129,19 @@ def predict(*, df, timesteps=None, save_dir="/tmp/", rendermode='plots'):
             f'Number of predict timesteps requested larger than in config ({timesteps} > {timesteps_config})'
 
     # Load model anf env stats from file
-    env, model = _load(df=df, train_predict='predict', save_dir=save_dir)
+    env, model = _load(df=df, train_predict='predict', load_dir=load_dir)
     env.training = False
     env.norm_reward = False
 
     print(f'RUN: Predicting for {timesteps} timesteps')
     obs = env.reset()
     done = False
-    rewards = []
     for i in range(timesteps):
-        action, _states = model.predict(obs, deterministic=True)
+        action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
-        rewards.append(reward)
         if done:
             print(f'Env done, loop {i+1}')
             break
     env.render(mode=rendermode)
-    return rewards
+
 
