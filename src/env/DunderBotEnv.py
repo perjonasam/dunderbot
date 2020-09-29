@@ -275,7 +275,7 @@ class DunderBotEnv(gym.Env):
             self.end_step = self.df.index.max()
         
         self.current_step = self.start_step
-        print(f'Resetting to timesteps: start {self.start_step}, end {self.end_step}.')
+        print(f'Resetting to timesteps: start {self.start_step} ({self.df.loc[self.start_step]["Timestamp"]}), end {self.end_step} ({self.df.loc[self.end_step]["Timestamp"]})')
 
         return self._next_observation()
 
@@ -297,7 +297,7 @@ class DunderBotEnv(gym.Env):
 
         elif mode == 'plots':
             # Render static TradingChart
-            print(f'Rendering TradingChartStatic for index steps {self.start_step} through {self.current_step}')
+            print(f'Rendering TradingChartStatic for index steps {self.start_step} ({self.df.loc[self.start_step]["Timestamp"]}) through {self.current_step} ({self.df.loc[self.current_step]["Timestamp"]})')
             self.viewer = TradingChartStatic(self.df, 
                                             self.start_step, 
                                             self.current_step)

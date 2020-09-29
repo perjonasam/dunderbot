@@ -13,6 +13,7 @@
 * Config is always read in memory. To reload the whole config in notebook, the kernel needs to be restarted, but specific fields in the config can be changed, e.g. config.input_data.source = 'Bitstamp'.
 * Good performance logger template during runtime: ```while true; do docker stats --no-stream | tee -a stats.txt; sleep 180; done```
 * Memory consumed depends on config.n_cpu and number of timesteps in data. As an example, n_cpu=8 and 800.000 serial timesteps consumes <5GB
+* A model is saved after training, along with some useful metadata and the essential normalization statistics. Any folder can be specified in loading, otherwise it will grab the latest (highest increment). Note that model should not be trained after loading, since not all training meta data is saved (shouldn't be a problem at all).
 
 # Resources
 ## RL concepts/intros
