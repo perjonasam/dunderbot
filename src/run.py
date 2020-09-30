@@ -111,9 +111,9 @@ def train(*, env, serial_timesteps=None, logging=False):
     
     model = PPO2(policy, env,
                 tensorboard_log=tensorboard_log,
-                verbose=0,
+                verbose=1,
                 seed=config.random_seed)
-    model.learn(total_timesteps=total_timesteps, log_interval=1, callback=callback)
+    model.learn(total_timesteps=total_timesteps, log_interval=int(serial_timesteps/128/10), callback=callback)  # log_interval is per n_updates
     # Save model and env
     _save(env=env, model=model)
     print(f'Done.')
