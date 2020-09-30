@@ -83,7 +83,7 @@ class DunderBotEnv(gym.Env):
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
         obs.extend([self.balance,
-            self.current_net_worth,
+            self.net_worths[-1],
             self.asset_held])
 
         # Technical indicator features (supposedly pd bug: dtype becomes object, enforcing float)
@@ -178,13 +178,13 @@ class DunderBotEnv(gym.Env):
                                 'total': None,
                                 'type': 'hold',
                                 'action_amount': None})
-        last_net_worth = self.current_net_worth
-        self.current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
-        current_return = (self.current_net_worth-last_net_worth)/(last_net_worth+1E-6)
-        self.returns.append(current_return)
 
+        current_net_worth = round(self.balance + self.asset_held * self.current_price, self.base_precision)
+        current_return = (current_net_worth-self.net_worths[-1])/(self.net_worths[-1]+1E-6)
+        self.returns.append(current_return)
+        self.net_worths.append(current_net_worth)
+        
         if self.train_predict == 'predict':
-            self.net_worths.append(self.current_net_worth)
             self.account_history.append(pd.DataFrame([{
                 'balance': self.balance,
                 'asset_held': self.asset_held,
@@ -220,7 +220,7 @@ class DunderBotEnv(gym.Env):
 
         done = False
         # DoD1: if we don't have any money, we can't trade
-        done = self.current_net_worth <= 0
+        done = self.net_worths[-1] <= 0
         # DoD2: When data is out during prediction, halt.
         if self.train_predict == 'predict':
             done = self.current_step >= self.df.index.max()
@@ -245,7 +245,6 @@ class DunderBotEnv(gym.Env):
         self.balance = config.trading_params.initial_account_balance
         self.asset_held = 0
         self.trades = []
-        self.current_net_worth = 0
         self.net_worths = [config.trading_params.initial_account_balance]
         self.asset_held_hist = [0.0]
         self.rewards = [0]
