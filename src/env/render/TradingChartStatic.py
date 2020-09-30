@@ -159,6 +159,7 @@ class TradingChartStatic:
 
         # Render trades, if they are not too many (when they become too hard to visually distinguish)
         trade_threshold = 250
+        print(f'X1: {len(trades)}')
         if len(trades) <= trade_threshold:
             self._render_trades(trades)
         else:

@@ -73,13 +73,17 @@ class DunderBotEnv(gym.Env):
         self.n_cpu = config.n_cpu
 
     def _next_observation(self):
+        
+
+        print(self.df.loc[self.current_step]["Timestamp"])
+        
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
         obs = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'Close'].to_list()
         temp = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'VolumeBTC'].to_list()
         obs.extend(temp)
-
+        
         # Non-price/volume features
         # NOTE: if changed, don't forget to set n_features in config
         obs.extend([self.balance,
@@ -247,8 +251,8 @@ class DunderBotEnv(gym.Env):
         self.trades = []
         self.net_worths = [config.trading_params.initial_account_balance]
         self.asset_held_hist = [0.0]
-        self.rewards = [0]
-        self.returns = [0]
+        self.rewards = []
+        self.returns = []
 
         self.account_history = []
         self.account_history.append(pd.DataFrame([{

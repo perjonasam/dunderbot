@@ -55,7 +55,7 @@ class RiskAdjustedReturns():
         expected_return = np.mean(returns)
         downside_std = np.sqrt(np.std(downside_returns))
 
-        return (expected_return - self._risk_free_rate + 1E-9) / (downside_std + 1E-9)
+        return (expected_return - self._risk_free_rate) / (downside_std + 1E-9)
 
 
     def get_reward(self, returns: list) -> float:
