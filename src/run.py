@@ -55,7 +55,7 @@ def _retrieve_save_load_dir():
 
     base_dir = './data/models/'
     dirlist = os.listdir(base_dir)
-    dirlist = [content for content in dirlist if os.path.isdir(base_dir + content)]
+    dirlist = [int(content) for content in dirlist if os.path.isdir(base_dir + content)]
     dirlist.sort()
     highest_existing_increment = dirlist[-1] if len(dirlist) > 0 else '0'
     save_dir = base_dir + str(int(highest_existing_increment)+1) + '/'
@@ -70,7 +70,7 @@ def _save(*, env, model):
     print(f'RUN: Saving files to {save_dir}')
     model.save(os.path.join(save_dir, "PPO2"))
     env.save(os.path.join(save_dir, "vec_normalize.pkl"))
-    Path(os.path.join(save_dir, datetime.now().strftime('%Y-%m-%d_%H%M%S'))).touch()
+    Path(os.path.join(save_dir, datetime.now().strftime('%Y-%m-%d_%H%M%S')+'.utc')).touch()
     copyfile('./config/config.yml', os.path.join(save_dir, 'config.yml'))
 
 
