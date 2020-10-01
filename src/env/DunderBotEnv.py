@@ -18,12 +18,12 @@ class DunderBotEnv(gym.Env):
     metadata = {'render.modes': ['plots', 'system', 'none']}
     viewer = None
 
-    def __init__(self, df, train_predict, record_time=False):
+    def __init__(self, df, train_predict, record_steptime=False):
         super(DunderBotEnv, self).__init__()
 
         self.timer = []
         self.df = df
-        self.record_time = record_time
+        self.record_steptime = record_steptime
         # -1 due to inclusive slicing and 0-indexing
         self.data_n_timesteps = int(config.data_params.data_n_timesteps)
         self.data_n_indexsteps = self.data_n_timesteps - 1
@@ -73,10 +73,6 @@ class DunderBotEnv(gym.Env):
         self.n_cpu = config.n_cpu
 
     def _next_observation(self):
-        
-
-        print(self.df.loc[self.current_step]["Timestamp"])
-        
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
         obs = self.df.loc[self.current_step - self.data_n_indexsteps: self.current_step
                         , 'Close'].to_list()
@@ -145,33 +141,33 @@ class DunderBotEnv(gym.Env):
         """
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
-        
+
         action_type, action_amount = self.translate_action(action)
         amount_asset_to_buy, amount_asset_to_sell = self._get_trade(action_type, action_amount)
 
-        asset_bought, asset_sold, purchase_cost, sale_revenue = self.trade_strategy.trade(buy_amount=amount_asset_to_buy,
+        assets_bought, assets_sold, purchase_cost, sale_revenue = self.trade_strategy.trade(buy_amount=amount_asset_to_buy,
                                                                                           sell_amount=amount_asset_to_sell,
                                                                                           balance=self.balance,
                                                                                           asset_held=self.asset_held,
                                                                                           current_price=self.current_price)
 
-        if asset_bought:
-            self.asset_held += asset_bought
+        if assets_bought:
+            self.asset_held += assets_bought
             self.balance -= purchase_cost
 
             if self.train_predict == 'predict':
                 self.trades.append({'step': self.current_step,
-                                    'amount': asset_bought,
+                                    'amount': assets_bought,
                                     'total': purchase_cost,
                                     'type': 'buy',
                                     'action_amount': action_amount})
-        elif asset_sold:
-            self.asset_held -= asset_sold
+        elif assets_sold:
+            self.asset_held -= assets_sold
             self.balance += sale_revenue
 
             if self.train_predict == 'predict':
                 self.trades.append({'step': self.current_step,
-                                    'amount': asset_sold,
+                                    'amount': assets_sold,
                                     'total': sale_revenue,
                                     'type': 'sell',
                                     'action_amount': action_amount})
@@ -192,9 +188,9 @@ class DunderBotEnv(gym.Env):
             self.account_history.append(pd.DataFrame([{
                 'balance': self.balance,
                 'asset_held': self.asset_held,
-                'asset_bought': asset_bought,
+                'asset_bought': assets_bought,
                 'purchase_cost': purchase_cost,
-                'asset_sold': asset_sold,
+                'asset_sold': assets_sold,
                 'sale_revenue': sale_revenue,
             }]))
 
@@ -236,7 +232,7 @@ class DunderBotEnv(gym.Env):
         obs = self._next_observation()
 
         # Timer for training slowdown analysis
-        if self.record_time:
+        if self.record_steptime:
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
             self.timer.append(now)
         return obs, reward, done, {}
@@ -253,6 +249,7 @@ class DunderBotEnv(gym.Env):
         self.asset_held_hist = [0.0]
         self.rewards = []
         self.returns = []
+        self.save_dir = ''
 
         self.account_history = []
         self.account_history.append(pd.DataFrame([{
@@ -301,18 +298,19 @@ class DunderBotEnv(gym.Env):
         elif mode == 'plots':
             # Render static TradingChart
             print(f'Rendering TradingChartStatic for index steps {self.start_step} ({self.df.loc[self.start_step]["Timestamp"]}) through {self.current_step} ({self.df.loc[self.current_step]["Timestamp"]})')
-            self.viewer = TradingChartStatic(self.df, 
-                                            self.start_step, 
-                                            self.current_step)
+            self.viewer = TradingChartStatic(df=self.df,
+                                            start_step=self.start_step,
+                                            end_step=self.current_step)
 
-            self.viewer.render(self.net_worths,
-                            self.trades,
-                            account_history_df)
+            self.viewer.render(net_worths=self.net_worths,
+                            trades=self.trades,
+                            account_history=account_history_df,
+                            save_dir=self.save_dir)
 
             # Render action distribution
-            self.viewer = ActionDistribution(self.trades)
-            self.viewer.render()
+            self.viewer = ActionDistribution(trades=self.trades)
+            self.viewer.render(save_dir=self.save_dir)
 
             # Render reward output
-            self.viewer = RewardDevelopment(self.rewards)
-            self.viewer.render()
+            self.viewer = RewardDevelopment(rewards=self.rewards)
+            self.viewer.render(save_dir=self.save_dir)

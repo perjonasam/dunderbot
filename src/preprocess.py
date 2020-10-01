@@ -94,7 +94,7 @@ def add_technical_features(df):
 
 def perform_nan_check(*, df):
     """Make sure there are no NaNs or ±infs in data that will be used."""
-    print(f'Performing NaN/inf check on data...')
+    print(f'PREPROCESS: Performing NaN/inf check on data...')
     assert df.iloc[config.data_params.ti_nan_timesteps:].replace([np.inf, -np.inf], np.nan).isna().sum().sum() == 0, \
         f'PREPROCESS: Found Nan/inf in data, aborting...'
     print(f'Done.')

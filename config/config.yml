@@ -26,8 +26,8 @@ input_data:
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 1500  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 500
+  train_timesteps: 1500000  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 50000
 
 monitoring:
   tensorboard:

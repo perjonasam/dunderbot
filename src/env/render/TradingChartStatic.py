@@ -1,4 +1,5 @@
 import sys
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -10,6 +11,7 @@ from datetime import datetime
 from pandas.plotting import register_matplotlib_converters
 
 from src.env.trade.Benchmarks import buy_and_hold, rsi_divergence, sma_crossover
+from src.util.run_util import retrieve_model_dir
 from src.util.config import get_config
 config = get_config()
 
@@ -29,7 +31,6 @@ class TradingChartStatic:
         self.step_range = slice(start_step, end_step)
         self.benchmarks = config.benchmarks
 
-
     def _render_net_worth(self, times, net_worths):
         # Clear the frame rendered last step
         self.net_worth_ax = plt.subplot2grid((6, 1), (0, 0), rowspan=1, colspan=1)
@@ -42,7 +43,6 @@ class TradingChartStatic:
         legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
         legend.get_frame().set_alpha(0.4)
 
-    
     def _render_benchmarks(self, times):
         colors = ['black', 'red', 'green', 'purple',
                   'magenta', 'yellow', 'cyan', 'orange']
@@ -59,7 +59,6 @@ class TradingChartStatic:
         legend = self.net_worth_ax.legend(loc=2, ncol=2, prop={'size': 8})
         legend.get_frame().set_alpha(0.4)
 
-
     def _render_assets_held(self, times, assets_held_hist):
         self.assets_ax = plt.subplot2grid((6, 1), (1, 0), rowspan=1, colspan=1, sharex=self.net_worth_ax)
 
@@ -73,7 +72,6 @@ class TradingChartStatic:
         self.assets_ax.legend()
         legend = self.assets_ax.legend(loc=2, ncol=2, prop={'size': 8})
         legend.get_frame().set_alpha(0.4)
-
 
     def _render_price(self, times):
         self.price_ax = plt.subplot2grid((6, 1), (2, 0), rowspan=4, colspan=1, sharex=self.net_worth_ax)
@@ -89,8 +87,6 @@ class TradingChartStatic:
         legend = self.price_ax.legend(loc=2, ncol=2, prop={'size': 8})
         legend.get_frame().set_alpha(0.4)
 
-    
-
     def _render_volume(self, times):
         self.volume_ax = self.price_ax.twinx()
         volume = np.array(self.df['VolumeBTC'].loc[self.step_range])
@@ -101,8 +97,11 @@ class TradingChartStatic:
         self.volume_ax.set_ylim(0, max(volume) / VOLUME_CHART_HEIGHT)
         self.volume_ax.yaxis.set_ticks([])
 
-
     def _render_trades(self, trades):
+        """ NOTE: the number of trades is commonly lower than number of timesteps,
+        especially for models trained very short. This is due to the model trying to sell,
+        despite not having any assets, and these events are not shown. """
+
         for trade in trades:
             if trade['step'] in range(sys.maxsize)[self.step_range]:
                 time = self.df['Timestamp'].loc[trade['step']]
@@ -116,12 +115,11 @@ class TradingChartStatic:
                     color = cmap(trade['action_amount'] * 2)
                 elif trade['type'] == 'hold':
                     color = 'lightgray'
-                
+
                 self.price_ax.annotate(' ', (mdates.date2num(time), close),
                                        xytext=(mdates.date2num(time), close),
                                        size="large",
                                        arrowprops=dict(arrowstyle='simple', facecolor=color))
-
 
     def _render_title(self, net_worths):
         net_worth = round(net_worths.iloc[-1], 2)
@@ -129,8 +127,7 @@ class TradingChartStatic:
         profit_percent = round((net_worth - initial_net_worth) / initial_net_worth * 100, 2)
         self.fig.suptitle('Net worth: $' + str(net_worth) + ' | Profit: ' + str(profit_percent) + '%')
 
-
-    def render(self, net_worths, trades, account_history, figwidth=15):
+    def render(self, net_worths, trades, account_history, save_dir, figwidth=15):
         # Displace index to slice everything consistently
         assets_held_hist = account_history['asset_held']
         assets_held_hist.index = assets_held_hist.index + self.start_step
@@ -147,7 +144,7 @@ class TradingChartStatic:
 
         # Add padding to make graph easier to view
         plt.subplots_adjust(left=0.11, bottom=0.24, right=0.90, top=0.95, wspace=0.2, hspace=0.05)
-        
+
         # Render subplots which share x-axis (price)
         self._render_net_worth(times, net_worths)
         if config.benchmarks.render:
@@ -158,24 +155,26 @@ class TradingChartStatic:
         self._render_title(net_worths)
 
         # Render trades, if they are not too many (when they become too hard to visually distinguish)
-        trade_threshold = 250
-        print(f'X1: {len(trades)}')
-        if len(trades) <= trade_threshold:
-            self._render_trades(trades)
-        else:
-            print(f'Not rendering trades since they are too many to distinguish in plot ({len(trades)}>{trade_threshold})')
+        # trade_threshold = 250
+        # if len(trades) <= trade_threshold:
+        self._render_trades(trades)
+        # else:
+        #     print(f'Not rendering trades since they are too many to distinguish in plot ({len(trades)}>{trade_threshold})')
 
         # Improve x axis annotation (use either DateFormatter or ConciseDateFormatter)
-        locator = mdates.AutoDateLocator() 
-        self.price_ax.xaxis.set_major_locator(locator) 
-        #self.price_ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+        locator = mdates.AutoDateLocator()
+        self.price_ax.xaxis.set_major_locator(locator)
+        # self.price_ax.xaxis.set_major_formatter(mdate s.ConciseDateFormatter(locator))
         self.price_ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M')) 
         self.price_ax.set_xlim([mdates.date2num(times.iloc[0]), mdates.date2num(times.iloc[-1])])
         self.fig.autofmt_xdate()
 
         # Hide duplicate net worth date labels
         plt.setp(self.net_worth_ax.get_xticklabels(), visible=False)
-        
+
+        # Save to disk
+        nowtime = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        plt.savefig(os.path.join(save_dir, f'TradingChartStatic_{nowtime}.pdf'))
         plt.show()
 
     def close(self):
