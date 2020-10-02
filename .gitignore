@@ -6,3 +6,4 @@ data/
 **/.DS_Store
 *.pickle
 *.pkl
+.vscode
