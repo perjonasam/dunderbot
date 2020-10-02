@@ -61,8 +61,7 @@ class DunderBotEnv(gym.Env):
 
         # Set Reward Strategy
         self.reward_strategy = eval(config.reward.strategy)
-        # TODO: explore this
-        self.reward_range = (0, 2147483647)
+        self.reward_range = self.reward_strategy.get_reward_range()
 
         # Are we training or predicting? Decides starting timestep.
         assert train_predict in ['train', 'predict'], f'Train_predict can only be `train` or `predict`.'

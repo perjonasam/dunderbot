@@ -27,7 +27,6 @@ class RiskAdjustedReturns():
         self._target_returns = target_returns
         self._window_size = config.reward.calculation_timesteps
 
-
     def _return_algorithm_from_str(self, algorithm_str: str) -> Callable[[pd.DataFrame], float]:
         assert algorithm_str in ['sharpe', 'sortino']
 
@@ -36,14 +35,12 @@ class RiskAdjustedReturns():
         elif algorithm_str == 'sortino':
             return self._sortino_ratio
 
-
     def _sharpe_ratio(self, returns: np.array) -> float:
         """Return the sharpe ratio for a given series of a returns.
         References:
             - https://en.wikipedia.org/wiki/Sharpe_ratio
         """
         return (np.mean(returns) - self._risk_free_rate + 1E-9) / (np.std(returns) + 1E-9)
-
 
     def _sortino_ratio(self, returns: np.array) -> float:
         """Return the sortino ratio for a given series of a returns.
@@ -57,9 +54,11 @@ class RiskAdjustedReturns():
 
         return (expected_return - self._risk_free_rate) / (downside_std + 1E-9)
 
-
     def get_reward(self, returns: list) -> float:
         """Return the reward corresponding to the selected risk-adjusted return metric."""
         risk_adjusted_return = self._return_algorithm(returns=np.array(returns[-self._window_size:]))
 
         return risk_adjusted_return
+
+    def get_reward_range(self):
+        return (-1000000, 1000000)

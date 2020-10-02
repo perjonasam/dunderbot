@@ -1,4 +1,5 @@
 # Running the code
+* Create data structure by running `mkdir -p data/{raw,monitoring,models,input}`
 * Run `make redo` to load docker container
 * Specify parameters in config.yml (can be changed later as well, check gotcha)
 * Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link)
@@ -14,6 +15,10 @@
 * Good performance logger template during runtime: ```while true; do docker stats --no-stream | tee -a stats.txt; sleep 180; done```
 * Memory consumed depends on config.n_cpu and number of timesteps in data. As an example, n_cpu=8 and 800.000 serial timesteps consumes <5GB
 * A model is saved after training, along with some useful metadata and the essential normalization statistics. Any folder can be specified in loading, otherwise it will grab the latest (highest increment). Note that model should not be trained after loading, since not all training meta data is saved (shouldn't be a problem at all).
+
+# Experiments
+## Remove TI features
+Compared with a comparable run, removing all TI features reduced the reward substantially, to nearly 0. The profit was also reduced notably (40ish -> 4ish over 50k timesteps). Comission and slippage was 0.
 
 # Resources
 ## RL concepts/intros
