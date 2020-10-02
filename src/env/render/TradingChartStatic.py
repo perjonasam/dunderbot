@@ -118,7 +118,7 @@ class TradingChartStatic:
 
                 self.price_ax.annotate(' ', (mdates.date2num(time), close),
                                        xytext=(mdates.date2num(time), close),
-                                       size="large",
+                                       size="small",
                                        arrowprops=dict(arrowstyle='simple', facecolor=color))
 
     def _render_title(self, net_worths):
@@ -155,11 +155,11 @@ class TradingChartStatic:
         self._render_title(net_worths)
 
         # Render trades, if they are not too many (when they become too hard to visually distinguish)
-        # trade_threshold = 250
-        # if len(trades) <= trade_threshold:
-        self._render_trades(trades)
-        # else:
-        #     print(f'Not rendering trades since they are too many to distinguish in plot ({len(trades)}>{trade_threshold})')
+        trade_threshold = 5000
+        if len(trades) <= trade_threshold:
+            self._render_trades(trades)
+        else:
+            print(f'Not rendering trades since they are too many to distinguish in plot ({len(trades)}>{trade_threshold})')
 
         # Improve x axis annotation (use either DateFormatter or ConciseDateFormatter)
         locator = mdates.AutoDateLocator()
