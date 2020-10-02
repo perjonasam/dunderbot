@@ -1,20 +1,20 @@
 # Running the code
-* Create data structure by running `mkdir -p data/{raw,monitoring,models,input}`
+* Create data structure by running `mkdir -p data/{raw,monitoring,models,input}` in dunderbot dir
 * Run `make redo` to load docker container
-* Specify parameters in config.yml (can be changed later as well, check gotcha)
-* Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link)
+* Specify parameters in config.yml (can be changed later as well, check gotcha below)
+* Run `make nb` to boot up a jupyter server in the container accessible through local browser (follow 127.0.0.1-link). The main *.ipynb (you'll know) contains everything you need to run the code and get started.
 * Run the cells from top to bottom. When you change settings in config.yml, restart the notebook kernel in UI, for changes to take effect.
 * For (lagged live) monitoring using TensorBoard, run `docker-compose exec dunderbot poetry run tensorboard --logdir ./data/monitoring/tensorboard/` (current config setting) and run `http://127.0.0.1:6006` in browser
 
 # Gotchas
-* Data is downloded from `http://api.bitcoincharts.com/v1/csv/`, pick any exchange and currency pair of your liking (config), and it will be aggregated to the time granularity specified in config.
+* Data is downloded from `http://api.bitcoincharts.com/v1/csv/`, pick any exchange and currency pair of your liking (config), and it will be aggregated to the time granularity specified in config, if file does not exist.
 * Time granularity: Any time granularity down to 1 second is supported, simply by specifying in config. But note that the 1s granularity conputation handles memory and time efficiently, while anything cruder is resampled (i.e., much less memory and time efficient). So best is probably to use 1s or 1m and cruder. 1m will take a while (measured 1d to 11min), but it's only done once.
 * Timeline: To support different time granularity, the start and ending points for training and prediction are dynamic and follows the following principles. There is no overlap between training and prediction. Starting point for prediction (which is also ending point for training) is counted from the end with number of prediction timesteps subtracted. From this timestep, the starting timestep for training is caluclated by subtracting number of training timesteps. During training, when all the data has been stapped through, it resets back to the starting point and continues. For prediction, the prediction cycle exits (done=True).
 * Each cpu will make calculations on the same timesteps. Therefore, the number of total timesteps = numberof serial timesteps * n_cpu. Due to communication between nodes, there are fewer model parameter updates per second for more cpu:s, but the updates are larger (and more diverse due to different seeds and exploration). In total, there are more timesteps per s for more cpu. In other words, should be set to as many as can be spared.
 * Config is always read in memory. To reload the whole config in notebook, the kernel needs to be restarted, but specific fields in the config can be changed, e.g. config.input_data.source = 'Bitstamp'.
 * Good performance logger template during runtime: ```while true; do docker stats --no-stream | tee -a stats.txt; sleep 180; done```
-* Memory consumed depends on config.n_cpu and number of timesteps in data. As an example, n_cpu=8 and 800.000 serial timesteps consumes <5GB
-* A model is saved after training, along with some useful metadata and the essential normalization statistics. Any folder can be specified in loading, otherwise it will grab the latest (highest increment). Note that model should not be trained after loading, since not all training meta data is saved (shouldn't be a problem at all).
+* Memory consumed depends on config.n_cpu and number of timesteps in data. As one example, n_cpu=8 and 800.000 serial timesteps consumes <5GB
+* The models is saved after training, along with some useful metadata and the essential normalization statistics. Any folder can be specified in loading, otherwise it will grab the latest (highest increment). Note that model should not be trained after loading, since not all training meta data is saved (shouldn't be a problem at all). After prediction, if rendering plots, the result plots are saved in the model folder.
 
 # Experiments
 ## Remove TI features
