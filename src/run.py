@@ -142,7 +142,7 @@ def predict(*, df, timesteps=None, rendermode='plots', model_dir=None):
         assert timesteps <= timesteps_config, \
             f'Number of predict timesteps requested larger than in config ({timesteps} > {timesteps_config})'
 
-    # Load model and env stats from file
+    # Load model and env normalization stats from file
     if model_dir is None:
         model_dir = retrieve_model_dir(first=False)
     env, model = _load(df=df, train_predict='predict', model_dir=model_dir)

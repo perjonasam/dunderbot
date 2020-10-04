@@ -19,6 +19,10 @@
 # Experiments
 ## Remove TI features
 Compared with a comparable run, removing all TI features reduced the reward substantially, to nearly 0. The profit was also reduced notably (40ish -> 4ish over 50k timesteps). Comission and slippage was 0.
+## Remove portfolio features
+Compared to baseline, removing the portfoilio features clerly decreased profit (35ish->7ish) as well as the reward during training and prediction.
+## Decreased data_n_timesteps to 1
+Same results as baseline. New baseline. 
 
 # Resources
 ## RL concepts/intros

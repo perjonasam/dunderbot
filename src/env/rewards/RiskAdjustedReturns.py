@@ -21,7 +21,7 @@ class RiskAdjustedReturns():
             risk_free_rate (optional): The risk free rate of returns to use for calculating metrics. Defaults to 0.
             target_returns (optional): The target returns per period for use in calculating the sortino ratio. Default to 0.
         """
-        
+
         self._return_algorithm = self._return_algorithm_from_str(return_algorithm)
         self._risk_free_rate = risk_free_rate
         self._target_returns = target_returns
@@ -61,4 +61,4 @@ class RiskAdjustedReturns():
         return risk_adjusted_return
 
     def get_reward_range(self):
-        return (-1000000, 1000000)
+        return (-100000, 100000)
