@@ -42,22 +42,8 @@ class DunderBotEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
-        # Set trade strategy with some constants
-        # TODO: select best values here (now using default in RLTrader)
-        # TODO: move some to config
-        self.base_precision = 2
-        self.asset_precision = 8
-        self.min_cost_limit = 1E-3
-        self.min_amount_limit = 1E-3
-        self.commission_percent = config.trading_params.commission
-        self.max_slippage_percent = config.trading_params.max_slippage
-
-        self.trade_strategy = TradeStrategy(commission_percent=self.commission_percent,
-                                             max_slippage_percent=self.max_slippage_percent,
-                                             base_precision=self.base_precision,
-                                             asset_precision=self.asset_precision,
-                                             min_cost_limit=self.min_cost_limit,
-                                             min_amount_limit=self.min_amount_limit)
+        # Set trade strategy
+        self.trade_strategy = TradeStrategy()
 
         # Set Reward Strategy
         self.reward_strategy = eval(config.reward.strategy)
@@ -131,11 +117,11 @@ class DunderBotEnv(gym.Env):
 
         action_type, action_amount = self.translate_action(action)
 
-        assets_bought, assets_sold, purchase_cost, sale_revenue = self.trade_strategy.trade_new(action_type=action_type,
+        assets_bought, assets_sold, purchase_cost, sale_revenue = self.trade_strategy.trade(action_type=action_type,
                                                                                             action_amount=action_amount,
-                                                                                          balance=self.balance,
-                                                                                          asset_held=self.asset_held,
-                                                                                          current_price=self.current_price)
+                                                                                            balance=self.balance,
+                                                                                            asset_held=self.asset_held,
+                                                                                            current_price=self.current_price)
 
         if assets_bought:
             self.asset_held += assets_bought

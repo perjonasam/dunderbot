@@ -1,49 +1,20 @@
 import numpy as np
-
-from typing import Tuple, Callable
+from typing import Tuple
+from src.util.config import get_config
+config = get_config()
 
 
 class TradeStrategy():
-    def __init__(self,
-                 commission_percent: float,
-                 max_slippage_percent: float,
-                 base_precision: int,
-                 asset_precision: int,
-                 min_cost_limit: float,
-                 min_amount_limit: float):
-        self.commission_percent = commission_percent
-        self.max_slippage_percent = max_slippage_percent
-        self.base_precision = base_precision
-        self.asset_precision = asset_precision
-        self.min_cost_limit = min_cost_limit
-        self.min_amount_limit = min_amount_limit
-
+    def __init__(self):
+        self.commission_percent = config.trading_params.commission
+        self.max_slippage_percent = config.trading_params.max_slippage
+        # TODO: review values
+        self.base_precision = 3
+        self.asset_precision = 8
+        self.min_cost_limit = 1E-3
+        self.min_amount_limit = 1E-3
 
     def trade(self,
-              buy_amount: float,
-              sell_amount: float,
-              balance: float,
-              asset_held: float,
-              current_price) -> Tuple[float, float, float, float]:
-
-        commission = self.commission_percent / 100
-        slippage = np.random.uniform(0, self.max_slippage_percent) / 100
-
-        asset_bought, asset_sold, purchase_cost, sale_revenue = buy_amount, sell_amount, 0, 0
-
-        if buy_amount > 0 and balance >= self.min_cost_limit:
-            price_adjustment = (1 + commission) * (1 + slippage)
-            buy_price = round(current_price * price_adjustment, self.base_precision)
-            purchase_cost = round(buy_price * buy_amount, self.base_precision)
-        elif sell_amount > 0 and asset_held >= self.min_amount_limit:
-            price_adjustment = (1 - commission) * (1 - slippage)
-            sell_price = round(current_price * price_adjustment, self.base_precision)
-            sale_revenue = round(sell_amount * sell_price, self.base_precision)
-
-        return asset_bought, asset_sold, purchase_cost, sale_revenue
-
-
-    def trade_new(self,
               action_type: str,
               action_amount: float,
               balance: float,
