@@ -50,21 +50,9 @@ class TradeStrategy():
               asset_held: float,
               current_price) -> Tuple[float, float, float, float]:
 
-
-        # amount_asset_to_buy = 0
-        # amount_asset_to_sell = 0
-
-        # if action_type == 'buy' and self.balance >= self.min_cost_limit:
-        #     price_adjustment = (1 + (self.commission_percent / 100)) * (1 + (self.max_slippage_percent / 100))
-        #     buy_price = round(self.current_price * price_adjustment, self.base_precision)
-        #     amount_asset_to_buy = round(self.balance * action_amount / buy_price, self.asset_precision)
-        # elif action_type == 'sell' and self.asset_held >= self.min_amount_limit:
-        #     amount_asset_to_sell = round(self.asset_held * action_amount, self.asset_precision)
-        # return amount_asset_to_buy, amount_asset_to_sell
-
         commission = self.commission_percent / 100
-        # TODO: model slippage non-uniform
-        slippage = np.random.uniform(0, self.max_slippage_percent) / 100
+        slippage = np.random.beta(1, 3) * self.max_slippage_percent / 100
+
         asset_bought, asset_sold, purchase_cost, sale_revenue = 0, 0, 0, 0
 
         if action_type == 'buy' and balance >= self.min_cost_limit:
