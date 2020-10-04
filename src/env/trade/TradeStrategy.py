@@ -5,14 +5,17 @@ config = get_config()
 
 
 class TradeStrategy():
-    def __init__(self):
+    def __init__(self,
+                 base_precision: int,
+                 asset_precision: int,
+                 min_cost_limit: float,
+                 min_amount_limit: float):
+        self.base_precision = base_precision
+        self.asset_precision = asset_precision
+        self.min_cost_limit = min_cost_limit
+        self.min_amount_limit = min_amount_limit
         self.commission_percent = config.trading_params.commission
         self.max_slippage_percent = config.trading_params.max_slippage
-        # TODO: review values
-        self.base_precision = 3
-        self.asset_precision = 8
-        self.min_cost_limit = 1E-3
-        self.min_amount_limit = 1E-3
 
     def trade(self,
               action_type: str,

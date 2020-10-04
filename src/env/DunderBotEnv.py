@@ -42,8 +42,17 @@ class DunderBotEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
-        # Set trade strategy
-        self.trade_strategy = TradeStrategy()
+        # Set trade strategy with some constants
+        # TODO: review values
+        self.base_precision = 3
+        self.asset_precision = 8
+        self.min_cost_limit = 1E-3
+        self.min_amount_limit = 1E-3
+
+        self.trade_strategy = TradeStrategy(base_precision=self.base_precision,
+                                            asset_precision=self.asset_precision,
+                                            min_cost_limit=self.min_cost_limit,
+                                            min_amount_limit=self.min_amount_limit)
 
         # Set Reward Strategy
         self.reward_strategy = eval(config.reward.strategy)

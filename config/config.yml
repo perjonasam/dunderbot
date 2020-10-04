@@ -8,8 +8,8 @@ data_params:
 
 trading_params:
   initial_account_balance: 10000  # USD
-  commission: 0  # in %. 0.1-0.5 typical
-  max_slippage: 0  # in %. 2-3 typical
+  commission: 0.2  # in %. 0.1-0.5 typical
+  max_slippage: 2  # in %. 2-3 typical
 
 policy:
   network: 'MlpPolicy'  # 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
@@ -26,8 +26,8 @@ input_data:
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 10000  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 500
+  train_timesteps: 1500000  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 50000
 
 monitoring:
   tensorboard:
