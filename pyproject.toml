@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dunderbot"
-version = "0.0.1"
+version = "0.1.0"
 description = "The dunderbot"
 authors = ["perjonasam"]
 
@@ -8,11 +8,9 @@ authors = ["perjonasam"]
 python = "^3.7"
 pandas = "^0"
 jupyter = "^1.0.0"
-ccxt = "^1.30.85"
 stable-baselines = "^2.10.0"
 tensorflow = "^1"
 pyyaml = "^5.3.1"
-ta = "^0.5.25"
 requests = "^2.24.0"
 
 [build-system]

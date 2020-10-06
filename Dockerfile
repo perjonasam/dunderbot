@@ -19,6 +19,7 @@ RUN poetry lock
 RUN poetry run pip install --upgrade pip
 RUN poetry run pip install --upgrade setuptools
 RUN poetry install 
+RUN poetry run pip install -U git+https://github.com/bukosabino/ta@master
 
 # To get stable baselines importing opencv-python to work
 RUN apt-get update

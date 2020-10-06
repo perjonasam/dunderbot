@@ -23,6 +23,11 @@ Compared with a comparable run, removing all TI features reduced the reward subs
 Compared to baseline, removing the portfoilio features clerly decreased profit (35ish->7ish) as well as the reward during training and prediction.
 ## Decreased data_n_timesteps to 1
 Same results as baseline. New baseline. 
+## Added commission and slippage
+Essentially no trading was taken place with a commission, even a gentle commission (0.2%) without slippage. Still new baseline.
+## Changed gamma (discount factor)
+Set to 0.995 (default 0.99) the agent lost all money. But traded like hell, so the commission ate up everything.
+
 
 # Resources
 ## RL concepts/intros
@@ -63,6 +68,7 @@ Same results as baseline. New baseline.
 ## RL
 ### Learning
 * Q-learning and policy gradient, simple and Nice: https://flyyufelix.github.io/2017/10/12/dqn-vs-pg.html
+* PPO hyperparameter ranges: https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
 
 ### Custom env and gym
 * Stable baselines docs on building a custom environment: https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html
@@ -73,24 +79,9 @@ Same results as baseline. New baseline.
 ### Evaluation
 * RL Evaluation: https://arxiv.org/abs/1709.06560
 
-### Visualisation
-* (Poor) visualization example in OpenAI Gy for trading: https://link.medium.com/Z6vfy7SbZ7
-
 ### General tips
 * Very handy RL tips: https://stable-baselines.readthedocs.io/en/master/guide/rl_tips.html
 
-## GAN
-* https://github.com/soumith/ganhacks
-* OK intro-artikel: https://pathmind.com/wiki/generative-adversarial-network-gan
-
-# Idéer
-## Features
-* Värden med tidslagg och trender
-* korrelerade tillgångar/priser/index/etc. (VIX)
-* fouriertransform för cykler (n olika komponenter)
-
-## Förprocessering
-* Kolla efter heteroskedasticity, multicollinearity, or serial correlation
 
 
 

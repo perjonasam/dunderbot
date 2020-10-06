@@ -48,7 +48,10 @@ def add_technical_features(df):
     df['ti_bb_lind'] = BB.bollinger_lband_indicator()
     # NOTE: too many inf/nan on 1s-data
     #df['ti_bb_pband'] = BB.bollinger_pband()
-    df['ti_bb_wband'] = BB.bollinger_wband()
+    
+    # TEMP: midband and no wband (for benchmarking with pandas_ta)
+    df['ti_bb_mind'] = BB.bollinger_mavg()
+    #df['ti_bb_wband'] = BB.bollinger_wband()
 
     # Ichimoku
     II = ta.trend.IchimokuIndicator(high=df['High'], low=df['Low'], n1=9, n2=26, n3=52, visual=False, fillna=False)
@@ -67,9 +70,9 @@ def add_technical_features(df):
 
     # Parabolic Stop and Reverse (Parabolic SAR)
     # NOTE: removed because too slow
-    # PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
-    # df['ti_psar_dind'] = PSAR.psar_down_indicator()
-    # df['ti_psar_uind'] = PSAR.psar_up_indicator()
+    PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
+    df['ti_psar_dind'] = PSAR.psar_down_indicator()
+    df['ti_psar_uind'] = PSAR.psar_up_indicator()
     
     # Average Directional Movement Index (ADX)
     ADX = ta.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=14, fillna=False)    
@@ -79,8 +82,8 @@ def add_technical_features(df):
 
     # Commodity Channel Index (CCI)
     # NOTE: too many infs on 1s data
-    # CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
-    # df['ti_cci'] = CCI.cci()
+    CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
+    df['ti_cci'] = CCI.cci()
 
     # Chaikin Money Flow (CMF)
     CMF = ta.volume.ChaikinMoneyFlowIndicator(high=df['High'], low=df['Low'], close=df['Close'], volume=df['VolumeBTC'], n=20, fillna=False)
