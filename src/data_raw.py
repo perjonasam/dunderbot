@@ -110,4 +110,4 @@ def download_and_process(force_refresh=False):
         df = prepare_raw_data(df=df)
         save_processed_data(df=df)
     else:
-        print(f'Processed data avilable locally, no downloading and raw data processing needed.')
+        print(f'Processed data available locally, no downloading and raw data processing needed.')

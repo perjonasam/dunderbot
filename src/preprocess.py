@@ -31,7 +31,7 @@ def trim_df(df):
     return df
 
 
-def add_technical_features(df, include_slow_features=False):
+def add_technical_features(df, include_slow_features=False, verbose=True):
     """
     Adding a couple of handpicked, very commonly utilized TIs for BTC.
     More info on each indicator: https://technical-analysis-library-in-python.readthedocs.io/en/latest
@@ -39,7 +39,7 @@ def add_technical_features(df, include_slow_features=False):
 
     TODO: move some recurring settings to config, like n.
     """
-    print(f'PREPROCESS: Adding technical features...')
+    if verbose: print(f'PREPROCESS: Adding technical features...')
     orig_len = len(df)
 
     # Add Bollinger Bands features
@@ -115,7 +115,7 @@ def add_technical_features(df, include_slow_features=False):
     df['ti_EMA200'] = df['Close'].ewm(span=span, min_periods=span, adjust=False).mean()
 
     assert orig_len == len(df), f'Length of df has changed when adding TI features, from {orig_len} to {len(df)}.'
-    print('Done.')
+    if verbose: print('Done.')
 
     return df
 
@@ -126,6 +126,23 @@ def perform_nan_check(*, df):
     assert df.iloc[config.data_params.ti_nan_timesteps:].replace([np.inf, -np.inf], np.nan).isna().sum().sum() == 0, \
         f'PREPROCESS: Found Nan/inf in data, aborting...'
     print(f'Done.')
+    return
+
+
+def perform_TIs_forward_lookingness_check(df):
+    """ Check for potential forward lookingness of TIs """
+    print('PREPROCESS: Performing check of forward lookingness of TIs')
+    test_len = 5000 + int(config.data_params.ti_nan_timesteps)
+    df_small = df.iloc[:test_len*2].copy()
+    df_smaller = df.iloc[:test_len].copy()
+
+    df_small = add_technical_features(df=df_small, include_slow_features=False, verbose=False)
+    df_smaller = add_technical_features(df=df_smaller, include_slow_features=False, verbose=False)
+
+    ti_cols = [col for col in df_small.columns if 'ti_' in col]
+    for ti_col in ti_cols:
+        assert df_smaller[ti_col].equals(df_small[ti_col].iloc[:test_len]), f'TI {ti_col} potentially forward looking'
+    return
 
 
 def preprocess_data(df, include_slow_features=False):
@@ -134,7 +151,8 @@ def preprocess_data(df, include_slow_features=False):
     """
     df = drop_nans_from_data(df=df)
     df = trim_df(df=df)
+    _ = perform_TIs_forward_lookingness_check(df=df)
     df = add_technical_features(df=df, include_slow_features=include_slow_features)
-    perform_nan_check(df=df)
+    _ = perform_nan_check(df=df)
 
     return df
