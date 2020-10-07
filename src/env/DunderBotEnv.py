@@ -164,7 +164,7 @@ class DunderBotEnv(gym.Env):
         current_return = (current_net_worth-self.net_worths[-1])/(self.net_worths[-1]+1E-6)
         self.returns.append(current_return)
         self.net_worths.append(current_net_worth)
-        
+
         if self.train_predict == 'predict':
             self.account_history.append(pd.DataFrame([{
                 'balance': self.balance,
@@ -232,6 +232,7 @@ class DunderBotEnv(gym.Env):
         self.returns = []
         self.save_dir = ''
 
+        # TODO: why are we adding one timestep before anything?
         self.account_history = []
         self.account_history.append(pd.DataFrame([{
             'balance': self.balance,
@@ -267,6 +268,7 @@ class DunderBotEnv(gym.Env):
         all_dict = {'current_step': self.current_step,
                     'net_worths': self.net_worths,
                     'trades': self.trades,
+                    'returns': self.returns,
                     'account_history': account_history_df,
                     'rewards': self.rewards}
         with open('all_dict_pred.pickle', 'wb') as handle:

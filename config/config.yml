@@ -4,7 +4,7 @@ action_strategy:
 data_params:
   data_n_timesteps: 1  # number of timesteps passed as part of value timeseries
   n_portfolio_features: 3  # See env for usage
-  ti_nan_timesteps: 33  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
+  ti_nan_timesteps: 199  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
 trading_params:
   initial_account_balance: 10000  # USD

@@ -31,9 +31,9 @@ def trim_df(df):
     return df
 
 
-def add_technical_features(df):
+def add_technical_features(df, include_slow_features=False):
     """
-    Adding a couple of handpicked, very commonly utilized TIs for BTC. 
+    Adding a couple of handpicked, very commonly utilized TIs for BTC.
     More info on each indicator: https://technical-analysis-library-in-python.readthedocs.io/en/latest
     NOTE: column names must be prefixed with `ti_`, since that is used to define obs space in env.
 
@@ -41,26 +41,23 @@ def add_technical_features(df):
     """
     print(f'PREPROCESS: Adding technical features...')
     orig_len = len(df)
-    
+
     # Add Bollinger Bands features
     BB = ta.volatility.BollingerBands(close=df['Close'], n=20, ndev=2, fillna=False)
     df['ti_bb_hind'] = BB.bollinger_hband_indicator()
     df['ti_bb_lind'] = BB.bollinger_lband_indicator()
     # NOTE: too many inf/nan on 1s-data
-    #df['ti_bb_pband'] = BB.bollinger_pband()
-    
-    # TEMP: midband and no wband (for benchmarking with pandas_ta)
-    df['ti_bb_mind'] = BB.bollinger_mavg()
-    #df['ti_bb_wband'] = BB.bollinger_wband()
+    # df['ti_bb_pband'] = BB.bollinger_pband()
+    df['ti_bb_wband'] = BB.bollinger_wband()
 
     # Ichimoku
+    # TODO: test ALT settings: 20,60, 120 (https://medium.com/@coinloop/technical-analysis-indicators-and-how-to-use-them-aa0fa706051)
     II = ta.trend.IchimokuIndicator(high=df['High'], low=df['Low'], n1=9, n2=26, n3=52, visual=False, fillna=False)
     df['ti_ii_senkou_a'] = II.ichimoku_a()
     df['ti_ii_senkou_b'] = II.ichimoku_b()
     df['ti_ii_kijun_sen'] = II.ichimoku_base_line()
 
     # Relative Strength Index (RSI)
-    # TODO: consider adding binary features for above 70 and below 30 (i.e. standard interpretation)
     RSI = ta.momentum.RSIIndicator(close=df['Close'], n=14, fillna=False)
     df['ti_rsi'] = RSI.rsi()
 
@@ -69,11 +66,12 @@ def add_technical_features(df):
     df['ti_macd_hist'] = MACD.macd_diff()
 
     # Parabolic Stop and Reverse (Parabolic SAR)
-    # NOTE: removed because too slow
-    PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
-    df['ti_psar_dind'] = PSAR.psar_down_indicator()
-    df['ti_psar_uind'] = PSAR.psar_up_indicator()
-    
+    # NOTE: very slow (1h on 1.75M obs)
+    if include_slow_features:
+        PSAR = ta.trend.PSARIndicator(high=df['High'], low=df['Low'], close=df['Close'], step=0.02, max_step=0.2, fillna=False)
+        df['ti_psar_dind'] = PSAR.psar_down_indicator()
+        df['ti_psar_uind'] = PSAR.psar_up_indicator()
+
     # Average Directional Movement Index (ADX)
     ADX = ta.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=14, fillna=False)    
     df['ti_adx'] = ADX.adx()
@@ -82,16 +80,43 @@ def add_technical_features(df):
 
     # Commodity Channel Index (CCI)
     # NOTE: too many infs on 1s data
-    CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
-    df['ti_cci'] = CCI.cci()
+    # CCI = ta.trend.CCIIndicator(high=df['High'], low=df['Low'], close=df['Close'], n=20, c=0.015, fillna=False)
+    # df['ti_cci'] = CCI.cci()
 
     # Chaikin Money Flow (CMF)
     CMF = ta.volume.ChaikinMoneyFlowIndicator(high=df['High'], low=df['Low'], close=df['Close'], volume=df['VolumeBTC'], n=20, fillna=False)
     df['ti_cmf'] = CMF.chaikin_money_flow()
 
+    # StochasticOscillator (SO)
+    # NOTE: too many NaN on 1s data
+    # TODO: test alt settings: Length = 10 K = 5 D = 3 (https://medium.com/@coinloop/technical-analysis-indicators-and-how-to-use-them-aa0fa706051)
+    # SO = ta.momentum.StochasticOscillator(high=df['High'], low=df['Low'], close=df['Close'], n=14, d_n=3, fillna=False)
+    # df['ti_so'] = SO.stoch()
+    # df['ti_so_signal'] = SO.stoch_signal()
+
+    # AwesomeOscillator
+    AO = ta.momentum.AwesomeOscillatorIndicator(high=df['High'], low=df['Low'], s=5, len=34, fillna=False)
+    df['ti_ao'] = AO.ao()
+
+    # EMA8
+    span = 8
+    df['ti_EMA8'] = df['Close'].ewm(span=span, min_periods=span, adjust=False).mean()
+
+    # EMA50
+    span = 50
+    df['ti_EMA50'] = df['Close'].ewm(span=span, min_periods=span, adjust=False).mean()
+
+    # EMA100
+    span = 100
+    df['ti_EMA100'] = df['Close'].ewm(span=span, min_periods=span, adjust=False).mean()
+
+    # EMA200
+    span = 200
+    df['ti_EMA200'] = df['Close'].ewm(span=span, min_periods=span, adjust=False).mean()
+
     assert orig_len == len(df), f'Length of df has changed when adding TI features, from {orig_len} to {len(df)}.'
     print('Done.')
-    
+
     return df
 
 
@@ -103,13 +128,13 @@ def perform_nan_check(*, df):
     print(f'Done.')
 
 
-def preprocess_data(df):
+def preprocess_data(df, include_slow_features=False):
     """
     Run all preprocessing steps
     """
     df = drop_nans_from_data(df=df)
     df = trim_df(df=df)
-    df = add_technical_features(df=df)
+    df = add_technical_features(df=df, include_slow_features=include_slow_features)
     perform_nan_check(df=df)
 
     return df
