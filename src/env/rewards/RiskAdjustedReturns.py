@@ -55,9 +55,12 @@ class RiskAdjustedReturns():
         return (expected_return - self._risk_free_rate) / (downside_std + 1E-9)
 
     def get_reward(self, returns: list) -> float:
-        """Return the reward corresponding to the selected risk-adjusted return metric."""
-        risk_adjusted_return = self._return_algorithm(returns=np.array(returns[-self._window_size:]))
-
+        """ Return the reward corresponding to the selected risk-adjusted return metric.
+        We need more than a few values since we divide with std(returns)+epsilon. """
+        if len(returns) > 5:
+            risk_adjusted_return = self._return_algorithm(returns=np.array(returns[-self._window_size:]))
+        else:
+            risk_adjusted_return = 0
         return risk_adjusted_return
 
     def get_reward_range(self):
