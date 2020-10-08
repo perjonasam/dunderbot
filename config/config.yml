@@ -1,6 +1,16 @@
 action_strategy:
     n_value_bins: 4  # amount bins for buy and sell each (hold has 1)
 
+trade:
+  strategy: TradeStrategyAbsolute()
+  max_ratio_denom: 2
+  min_absolute_trade_value: 0.01  # BTC. Only used for absolute strategy
+  max_absolute_trade_value: 0.2  # BTC. 
+
+reward:
+  strategy: RiskAdjustedReturns(return_algorithm='sortino')
+  calculation_timesteps: 100000
+
 data_params:
   data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
   n_portfolio_features: 3  # See env for usage
@@ -10,13 +20,13 @@ trading_params:
   initial_account_balance: 10000  # USD
   commission: 0.2  # in %. 0.1-0.5 typical
   max_slippage: 0  # in %. 2-3 typical
+  base_precision: 2
+  asset_precision: 8
+  min_cost_limit: 1E-3
+  min_amount_limit: 1E-3
 
 policy:
   network: 'MlpPolicy'  # 'MlpPolicy', 'MlpLstmPolicy', 'MlpLnLstmPolicy'. NOTE: LSTM requires more code changes
-
-reward:
-  strategy: RiskAdjustedReturns(return_algorithm='sortino')
-  calculation_timesteps: 100000
 
 # Read relevant gotcha in README.md
 input_data:
@@ -38,3 +48,4 @@ benchmarks:
 
 random_seed: 42
 n_cpu: 8  # cores really. Will affect memory consumed (not shared data)
+

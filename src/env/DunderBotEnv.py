@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from stable_baselines.common import set_global_seeds
 from src.env.render import TradingChartStatic, ActionDistribution, RewardDevelopment
-from src.env.trade.TradeStrategy import TradeStrategyRatio
+from src.env.trade.TradeStrategies import TradeStrategyRatio, TradeStrategyAbsolute
 from src.env.rewards import RiskAdjustedReturns, IncrementalNetWorth
 
 from src.util.config import get_config
@@ -19,7 +19,7 @@ class DunderBotEnv(gym.Env):
     viewer = None
 
     def __init__(self, df, train_predict, record_steptime=False):
-        super(DunderBotEnv, self).__init__()
+        super().__init__()
 
         self.timer = []
         self.df = df
@@ -43,15 +43,7 @@ class DunderBotEnv(gym.Env):
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
         # Set trade strategy with some constants
-        self.base_precision = 2
-        self.asset_precision = 8
-        self.min_cost_limit = 1E-2
-        self.min_amount_limit = 1E-3
-
-        self.trade_strategy = TradeStrategyRatio(base_precision=self.base_precision,
-                                            asset_precision=self.asset_precision,
-                                            min_cost_limit=self.min_cost_limit,
-                                            min_amount_limit=self.min_amount_limit)
+        self.trade_strategy = eval(config.trade.strategy)
 
         # Set Reward Strategy
         self.reward_strategy = eval(config.reward.strategy)
@@ -64,6 +56,7 @@ class DunderBotEnv(gym.Env):
         # Calculate train/predict breaking point from settings in config
         self.traintest_breaking_point_timestep = df.index.max() - int(config.train_predict.predict_timesteps)
         self.n_cpu = config.n_cpu
+        self.base_precision = config.trading_params.base_precision
 
     def _next_observation(self):
         # Get the price+volume data points for the last data_n_indexsteps days and scale to between 0-1
@@ -94,12 +87,11 @@ class DunderBotEnv(gym.Env):
 
         return obs
 
-
     def _take_action(self, action):
         """
         There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
         according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
-        
+
         First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold.
 
         Saving info during prediction for rendering (similar info is logged using tensorboard for training)
