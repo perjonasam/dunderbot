@@ -147,7 +147,7 @@ class TradingChartStatic:
 
         # Render subplots which share x-axis (price)
         self._render_net_worth(times, net_worths)
-        if config.benchmarks.render:
+        if len(config.benchmarks.strategies) > 0:
             self._render_benchmarks(times)
         self._render_assets_held(times, assets_held_hist)
         self._render_price(times)

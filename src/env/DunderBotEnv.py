@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from stable_baselines.common import set_global_seeds
 from src.env.render import TradingChartStatic, ActionDistribution, RewardDevelopment
-from src.env.trade.TradeStrategy import TradeStrategy
+from src.env.trade.TradeStrategy import TradeStrategyRatio
 from src.env.rewards import RiskAdjustedReturns, IncrementalNetWorth
 
 from src.util.config import get_config
@@ -43,13 +43,12 @@ class DunderBotEnv(gym.Env):
             low=-np.inf, high=np.inf, shape=(self.obs_array_length,), dtype=np.float16)
 
         # Set trade strategy with some constants
-        # TODO: review values
-        self.base_precision = 3
+        self.base_precision = 2
         self.asset_precision = 8
-        self.min_cost_limit = 1E-3
+        self.min_cost_limit = 1E-2
         self.min_amount_limit = 1E-3
 
-        self.trade_strategy = TradeStrategy(base_precision=self.base_precision,
+        self.trade_strategy = TradeStrategyRatio(base_precision=self.base_precision,
                                             asset_precision=self.asset_precision,
                                             min_cost_limit=self.min_cost_limit,
                                             min_amount_limit=self.min_amount_limit)
@@ -95,22 +94,6 @@ class DunderBotEnv(gym.Env):
 
         return obs
 
-    def translate_action(self, action):
-        """There are n_value_bins (=self.action_n_bins) actions per buy and sell, marking a range of ratios of possible assets to buy and sell,
-        according to 1/(bin_value+1) since we want a buy/sell ratio of max 1/2. Hold uses only one action.
-
-        First n_value_bins actions are buy, next n_value_bins sell, and lastly single hold."""
-        # TODO: test impact of different orders of actions
-        if action < self.action_n_bins:
-            action_type = 'buy'
-            action_amount = 1/(action + 2)  # +1 for 0 first of array, and +1 for 1/2 as max ratio
-        elif action >= self.action_n_bins and action < 2 * self.action_n_bins:
-            action_type = 'sell'
-            action_amount = 1/((action-self.action_n_bins) + 2)
-        elif action == 2 * self.action_n_bins:
-            action_type = 'hold'
-            action_amount = None
-        return action_type, action_amount
 
     def _take_action(self, action):
         """
@@ -124,14 +107,16 @@ class DunderBotEnv(gym.Env):
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
 
-        action_type, action_amount = self.translate_action(action)
+        # action_type, action_amount = self.translate_action(action)
 
-        assets_bought, assets_sold, purchase_cost, sale_revenue = self.trade_strategy.trade(action_type=action_type,
-                                                                                            action_amount=action_amount,
-                                                                                            balance=self.balance,
-                                                                                            asset_held=self.asset_held,
-                                                                                            current_price=self.current_price)
+        trade_data = self.trade_strategy.trade(action=action,
+                                               balance=self.balance,
+                                               asset_held=self.asset_held,
+                                               current_price=self.current_price)
+        # Unpack
+        assets_bought, assets_sold, purchase_cost, sale_revenue, action_type, action_amount = trade_data
 
+        # Update system with trade_data
         if assets_bought:
             self.asset_held += assets_bought
             self.balance -= purchase_cost

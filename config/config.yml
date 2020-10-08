@@ -2,7 +2,7 @@ action_strategy:
     n_value_bins: 4  # amount bins for buy and sell each (hold has 1)
 
 data_params:
-  data_n_timesteps: 1  # number of timesteps passed as part of value timeseries
+  data_n_timesteps: 10  # number of timesteps passed as part of value timeseries
   n_portfolio_features: 3  # See env for usage
   ti_nan_timesteps: 199  # Set by the slowest lagging ti. Count nans on preprocessed df to know number.
 
@@ -26,15 +26,14 @@ input_data:
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 1500000  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 250000
+  train_timesteps: 1500  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 250
 
 monitoring:
   tensorboard:
     folder: 'data/monitoring/tensorboard'
 
-benchmarks: 
-  render: True  # TODO: replace with length of config.benchmarks.strategies
+benchmarks:
   strategies: [buy_and_hold, rsi_divergence, sma_crossover]  # Check env.trade.Benchmarks for available benchmarks
 
 random_seed: 42
