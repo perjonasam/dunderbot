@@ -99,8 +99,6 @@ class DunderBotEnv(gym.Env):
         # Set the current price to a random price within the time step
         self.current_price = self.df.loc[self.current_step, "Close"]
 
-        # action_type, action_amount = self.translate_action(action)
-
         trade_data = self.trade_strategy.trade(action=action,
                                                balance=self.balance,
                                                asset_held=self.asset_held,

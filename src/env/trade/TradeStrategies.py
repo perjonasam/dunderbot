@@ -14,33 +14,6 @@ class TradeStrategyBase():
         self.max_slippage_percent = float(config.trading_params.max_slippage)
         self.action_n_bins = int(config.action_strategy.n_value_bins)
 
-    def trade(self,
-              action: int,
-              balance: float,
-              asset_held: float,
-              current_price) -> Tuple[float, float, float, float]:
-
-        # Translate action
-        action_type, action_amount = self._translate_action(action)
-
-        commission = self.commission_percent / 100
-        slippage = np.random.beta(1, 3) * self.max_slippage_percent / 100
-
-        # Calculate buy/sell values
-        asset_bought, asset_sold, purchase_cost, sale_revenue = 0, 0, 0, 0
-        if action_type == 'buy' and balance >= self.min_cost_limit:
-            price_adjustment = (1 + commission) * (1 + slippage)
-            buy_price = round(current_price * price_adjustment, self.base_precision)
-            asset_bought = round(balance * action_amount / buy_price, self.asset_precision)
-            purchase_cost = round(buy_price * asset_bought, self.base_precision)
-        elif action_type == 'sell' and asset_held >= self.min_amount_limit:
-            price_adjustment = (1 - commission) * (1 - slippage)
-            sell_price = round(current_price * price_adjustment, self.base_precision)
-            asset_sold = round(asset_held * action_amount, self.asset_precision)
-            sale_revenue = round(asset_sold * sell_price, self.base_precision)
-
-        return asset_bought, asset_sold, purchase_cost, sale_revenue, action_type, action_amount
-
 
 class TradeStrategyRatio(TradeStrategyBase):
     """ Use ratios of balance (buy) and asset_held (sell) with max 1/max_ratio_denom (config)
@@ -65,6 +38,34 @@ class TradeStrategyRatio(TradeStrategyBase):
             action_amount = None
         return action_type, action_amount
 
+    def trade(self,
+              action: int,
+              balance: float,
+              asset_held: float,
+              current_price) -> Tuple[float, float, float, float]:
+        """ Similar logic as absolute but slightly different because action_amount is ratio of balance/asset_held.
+        NOTE: this needs to return the same as the absolute class. """
+        # Translate action
+        action_type, action_amount = self._translate_action(action)
+
+        commission = self.commission_percent / 100
+        slippage = np.random.beta(1, 3) * self.max_slippage_percent / 100
+
+        # Calculate buy/sell values
+        asset_bought, asset_sold, purchase_cost, sale_revenue = 0, 0, 0, 0
+        if action_type == 'buy' and balance >= self.min_cost_limit:
+            price_adjustment = (1 + commission) * (1 + slippage)
+            buy_price = round(current_price * price_adjustment, self.base_precision)
+            asset_bought = round(balance * action_amount / buy_price, self.asset_precision)
+            purchase_cost = round(buy_price * asset_bought, self.base_precision)
+        elif action_type == 'sell' and asset_held >= self.min_amount_limit:
+            price_adjustment = (1 - commission) * (1 - slippage)
+            sell_price = round(current_price * price_adjustment, self.base_precision)
+            asset_sold = round(asset_held * action_amount, self.asset_precision)
+            sale_revenue = round(asset_sold * sell_price, self.base_precision)
+
+        return asset_bought, asset_sold, purchase_cost, sale_revenue, action_type, action_amount
+
 
 class TradeStrategyAbsolute(TradeStrategyBase):
     """ Use absolute values of old fashioned currency to trade in. Min and max are set in config
@@ -88,3 +89,31 @@ class TradeStrategyAbsolute(TradeStrategyBase):
             action_type = 'hold'
             action_amount = None
         return action_type, action_amount
+
+    def trade(self,
+              action: int,
+              balance: float,
+              asset_held: float,
+              current_price) -> Tuple[float, float, float, float]:
+        """ Similar logic as ratio but slightly different because action_amount is in USD.
+        NOTE: this needs to return the same as the ratio class"""
+        # Translate action
+        action_type, action_amount = self._translate_action(action)
+
+        commission = self.commission_percent / 100
+        slippage = np.random.beta(1, 3) * self.max_slippage_percent / 100
+
+        # Calculate buy/sell values
+        asset_bought, asset_sold, purchase_cost, sale_revenue = 0, 0, 0, 0
+        if action_type == 'buy' and balance >= self.min_cost_limit:
+            price_adjustment = (1 + commission) * (1 + slippage)
+            buy_price = round(current_price * price_adjustment, self.base_precision)
+            asset_bought = round(action_amount / buy_price, self.asset_precision)
+            purchase_cost = round(buy_price * asset_bought, self.base_precision)
+        elif action_type == 'sell' and asset_held >= self.min_amount_limit:
+            price_adjustment = (1 - commission) * (1 - slippage)
+            sell_price = round(current_price * price_adjustment, self.base_precision)
+            asset_sold = round(action_amount / sell_price, self.asset_precision)
+            sale_revenue = round(asset_sold * sell_price, self.base_precision)
+
+        return asset_bought, asset_sold, purchase_cost, sale_revenue, action_type, action_amount

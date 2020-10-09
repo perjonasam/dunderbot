@@ -2,10 +2,10 @@ action_strategy:
     n_value_bins: 4  # amount bins for buy and sell each (hold has 1)
 
 trade:
-  strategy: TradeStrategyAbsolute()
-  max_ratio_denom: 2
-  min_absolute_trade_value: 0.01  # BTC. Only used for absolute strategy
-  max_absolute_trade_value: 0.2  # BTC. 
+  strategy: TradeStrategyAbsolute()  # TradeStrategyAbsolute(), TradeStrategyRatio()
+  max_ratio_denom: 2  # Only used for ratio strategy
+  min_absolute_trade_value: 200  # USD. Only used for absolute strategy
+  max_absolute_trade_value: 2000  # USD.
 
 reward:
   strategy: RiskAdjustedReturns(return_algorithm='sortino')
@@ -32,12 +32,12 @@ policy:
 input_data:
   asset: 'BTCUSD'
   source: 'Bitstamp'  # Bitstamp runs up until today
-  tempres: '1s'  # n[s, m, h, d]
+  tempres: '1m'  # n[s, m, h, d]
 
 train_predict:
   # These will set the starting timesteps in reset. They are serial timesteps, independent of n_cpu
-  train_timesteps: 1500  # Will be downsized to even multiple of n_steps (default 128)
-  predict_timesteps: 250
+  train_timesteps: 1500000  # Will be downsized to even multiple of n_steps (default 128)
+  predict_timesteps: 50000  # 30d ≈ 50k on 1m, 250k on 1s (Bitstamp)
 
 monitoring:
   tensorboard:
