@@ -108,12 +108,16 @@ class TradeStrategyAbsolute(TradeStrategyBase):
         if action_type == 'buy' and balance >= self.min_cost_limit:
             price_adjustment = (1 + commission) * (1 + slippage)
             buy_price = round(current_price * price_adjustment, self.base_precision)
+            # Can't buy for more than we have
+            action_amount = min(action_amount, balance)
             asset_bought = round(action_amount / buy_price, self.asset_precision)
             purchase_cost = round(buy_price * asset_bought, self.base_precision)
         elif action_type == 'sell' and asset_held >= self.min_amount_limit:
             price_adjustment = (1 - commission) * (1 - slippage)
             sell_price = round(current_price * price_adjustment, self.base_precision)
             asset_sold = round(action_amount / sell_price, self.asset_precision)
+            # Can't sell more than what we have
+            asset_sold = min(asset_sold, asset_held)
             sale_revenue = round(asset_sold * sell_price, self.base_precision)
 
         return asset_bought, asset_sold, purchase_cost, sale_revenue, action_type, action_amount
