@@ -18,7 +18,9 @@ class ActionDistribution:
 
         df_counts = df.groupby(['type', 'action_amount']).size()
         df_perc = df_counts/len(df)*100
-        ax = df_perc.plot.bar(figsize=(figwidth, figwidth/3), title='Trade ratio distribution in % of timesteps')
+        ax = df_perc.plot.bar(figsize=(figwidth, figwidth/3), title=f'Trade ratio distribution in % of {len(df)} trades')
+        for p in ax.patches:
+            ax.annotate(str(round(p.get_height()*len(df)/100)), (p.get_x(), p.get_height() * 0.95))
         ax.set_ylabel("% of timesteps")
         ax.set_xlabel("trade with ratio")
 
