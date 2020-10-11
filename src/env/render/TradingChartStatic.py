@@ -101,24 +101,38 @@ class TradingChartStatic:
         """ NOTE: the number of trades is commonly lower than number of timesteps,
         especially for models trained very short. This is due to the model trying to sell,
         despite not having any assets, and these events are not shown. """
-
+        
+        # Collect and plot each trade
         for trade in trades:
             if trade['step'] in range(sys.maxsize)[self.step_range]:
                 time = self.df['Timestamp'].loc[trade['step']]
                 close = self.df['Close'].loc[trade['step']]
+                
+                # Scale colors
+                if 'TradeStrategyAbsolute' in config.trade.strategy:
+                    min_val = config.trade.min_absolute_trade_value
+                    max_val = config.trade.max_absolute_trade_value
+                elif 'TradeStrategyRatio' in config.trade.strategy:
+                    min_val = 1 / config.trade.max_ratio_denom
+                    min_val = 1 / config.trade.max_ratio_denom + config.n_value_bins - 1
+                else:
+                    print('REDNDER: Add trade strategy to color scaling for readable plot of trades')
+                a = (1 - 0.3) / (max_val - min_val)
+                b = 1.0 - a * max_val
+                amount = 0 if trade['action_amount'] is None else a * trade['action_amount'] + b
 
                 if trade['type'] == 'buy':
                     cmap = matplotlib.cm.get_cmap('Greens')
-                    color = cmap(trade['action_amount'] * 2)
+                    color = cmap(amount)
                 elif trade['type'] == 'sell':
                     cmap = matplotlib.cm.get_cmap('Reds')
-                    color = cmap(trade['action_amount'] * 2)
+                    color = cmap(amount)
                 elif trade['type'] == 'hold':
                     color = 'lightgray'
 
                 self.price_ax.annotate(' ', (mdates.date2num(time), close),
                                        xytext=(mdates.date2num(time), close),
-                                       size="small",
+                                       size="medium",
                                        arrowprops=dict(arrowstyle='simple', facecolor=color))
 
     def _render_title(self, net_worths):
