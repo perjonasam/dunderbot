@@ -113,6 +113,7 @@ class DunderBotEnv(gym.Env):
 
             if self.train_predict == 'predict':
                 self.trades.append({'step': self.current_step,
+                                    'timestamp': self.df.loc[self.current_step]['Timestamp'],
                                     'amount': assets_bought,
                                     'total': purchase_cost,
                                     'type': 'buy',
@@ -123,6 +124,7 @@ class DunderBotEnv(gym.Env):
 
             if self.train_predict == 'predict':
                 self.trades.append({'step': self.current_step,
+                                    'timestamp': self.df.loc[self.current_step]['Timestamp'],
                                     'amount': assets_sold,
                                     'total': sale_revenue,
                                     'type': 'sell',
@@ -130,6 +132,7 @@ class DunderBotEnv(gym.Env):
         elif action_type == 'hold':
             if self.train_predict == 'predict':
                 self.trades.append({'step': self.current_step,
+                                'timestamp': self.df.loc[self.current_step]['Timestamp'],
                                 'amount': None,
                                 'total': None,
                                 'type': 'hold',
